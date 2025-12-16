@@ -3,7 +3,6 @@ import psycopg2
 import time
 from datetime import datetime, timedelta
 
-
 # Data de Início (Ano, Mês, Dia)
 START_DATE = datetime(2020, 1, 1) 
 END_DATE = datetime.now() # Até o momento atual
@@ -108,7 +107,7 @@ def insert_cve_data(conn, cve_item):
     finally:
         cursor.close()
 
-# --- LÓGICA DE JANELAS DE TEMPO (SLIDING WINDOW) ---
+
 def fetch_by_date_range():
     conn = get_connection()
     if not conn: return
