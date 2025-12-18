@@ -3,17 +3,17 @@ import psycopg2
 import time
 from datetime import datetime, timedelta
 
-# Data de Início (Ano, Mês, Dia)
+#data de inicio para pegar os dados
 START_DATE = datetime(2020, 1, 1) 
-END_DATE = datetime.now() # Até o momento atual
+END_DATE = datetime.now() #ate o momento atual
 
-# --- CONFIGURAÇÕES ---
+#configuracoes de API
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 API_KEY = "c1c6add5-4bd5-4186-be73-dbace95a4243" 
 RESULTS_PER_PAGE = 2000
 DELAY_SECONDS = 0.6
 
-# --- 1. FUNÇÃO DE CONEXÃO ---
+#funcao de conexao com banco de dados 
 def get_connection():
     try:
         conn = psycopg2.connect(
@@ -28,7 +28,7 @@ def get_connection():
         print(f"Erro de conexão com o Banco: {e}")
         return None
 
-# --- INSERT
+# INSERT
 def insert_cve_data(conn, cve_item):
     cursor = conn.cursor()
     cve_id = cve_item.get("id", "UNKNOWN")
