@@ -130,20 +130,3 @@ streamlit run app.py
 ```
 
 O dashboard abrirá automaticamente no seu navegador em: http://localhost:8501
-
----
-
-📂 Estrutura do Projeto
-
-├── populate tables/        # Scripts Python de ETL (Extração e Carga)
-│   ├── cve.py              # Coleta dados do NVD
-│   ├── cwe.py              # Coleta dados da CISA (Ransomware/Exploits)
-│   ├── epss.py             # Coleta scores de probabilidade
-│   └── kev.py              # Popula o dicionário de descrições CWE
-│
-├── schema/                 # Scripts SQL (DDL)
-│   └── ddl.sql          # Criação das tabelas e índices do banco
-│
-├── app.py                  # Aplicação do Dashboard (Streamlit)
-├── docker-compose.yml      # Orquestração do Banco PostgreSQL e pgAdmin
-└── README.md               # Documentação do Projeto
