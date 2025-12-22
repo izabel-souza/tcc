@@ -2,10 +2,11 @@ import requests
 import psycopg2
 from datetime import datetime
 
-# --- CONFIGURAÇÕES ---
+#configuracoes de API
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 START_DATE_FILTER = datetime(2020, 1, 1).date()
 
+#funcao de conexao com banco de dados 
 def get_connection():
     try:
         conn = psycopg2.connect(
@@ -43,7 +44,7 @@ def insert_kev_data(conn, item):
         if date_added < START_DATE_FILTER:
             return 
 
-        # SQL de Inserção
+        #query de INSERT
         sql = """
             INSERT INTO kev (
                 cve_id, vendor_project, product, vulnerability_name, 
@@ -73,7 +74,7 @@ def insert_kev_data(conn, item):
     finally:
         cursor.close()
         
-        
+#conecta no banco e chama a funcao de insert 
 def fetch_and_load_kev():
     conn = get_connection()
     if not conn: return
@@ -94,11 +95,9 @@ def fetch_and_load_kev():
 
         count_inserted = 0
         for item in vulnerabilities:
-            # Chama a inserção para cada item
             insert_kev_data(conn, item)
             count_inserted += 1
-            
-            # Feedback visual a cada 100 itens
+
             if count_inserted % 100 == 0:
                 print(f"Processados: {count_inserted}/{total}...")
 

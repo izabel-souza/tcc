@@ -3,17 +3,17 @@ import psycopg2
 import time
 from datetime import datetime, timedelta
 
-# Data de Início (Ano, Mês, Dia)
+#data de inicio para pegar os dados
 START_DATE = datetime(2020, 1, 1) 
-END_DATE = datetime.now() # Até o momento atual
+END_DATE = datetime.now() #ate o momento atual
 
-# --- CONFIGURAÇÕES ---
+#configuracoes de API
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 API_KEY = "c1c6add5-4bd5-4186-be73-dbace95a4243" 
 RESULTS_PER_PAGE = 2000
 DELAY_SECONDS = 0.6
 
-# --- 1. FUNÇÃO DE CONEXÃO ---
+#funcao de conexao com banco de dados 
 def get_connection():
     try:
         conn = psycopg2.connect(
@@ -28,7 +28,7 @@ def get_connection():
         print(f"Erro de conexão com o Banco: {e}")
         return None
 
-# --- INSERT
+#funcao de insert no banco
 def insert_cve_data(conn, cve_item):
     cursor = conn.cursor()
     cve_id = cve_item.get("id", "UNKNOWN")
@@ -69,7 +69,8 @@ def insert_cve_data(conn, cve_item):
             conf_impact = cvss_data.get("confidentialityImpact")
             integ_impact = cvss_data.get("integrityImpact")
             avail_impact = cvss_data.get("availabilityImpact")
-
+        
+        #query de INSERT
         sql_insert = """
             INSERT INTO cves (
                 id, published_date, last_modified_date, vuln_status, description, cve_tags,
@@ -107,33 +108,27 @@ def insert_cve_data(conn, cve_item):
     finally:
         cursor.close()
 
-
+#conecta no banco e chama a funcao de insert
 def fetch_by_date_range():
     conn = get_connection()
     if not conn: return
 
     headers = {"apiKey": API_KEY} if API_KEY else {}
-    
-    # Inicio em 2020
     current_start = START_DATE
 
     while current_start < END_DATE:
-        # Define o fim da janela (120 dias à frente)
         current_end = current_start + timedelta(days=120)
         
-        # Se passar da data atual, ajusta para agora
         if current_end > END_DATE:
             current_end = END_DATE
 
-        # Formata datas para o padrão da API NVD (ISO 8601)
         str_start = current_start.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         str_end = current_end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         print(f"\n>>> Buscando período: {str_start} até {str_end}")
 
-        # Paginação INTERNA da janela (pois podem haver mais de 2000 CVEs em 4 meses)
         start_index = 0
-        total_results = 1 # Dummy para entrar no loop
+        total_results = 1
 
         while start_index < total_results:
             params = {
@@ -156,10 +151,8 @@ def fetch_by_date_range():
                     for item in vulnerabilities:
                         insert_cve_data(conn, item.get("cve", {}))
                     
-                    # Avança paginação
                     start_index += RESULTS_PER_PAGE
-                    
-                    # Rate Limit
+            
                     print(f"   - Aguardando {DELAY_SECONDS}s...")
                     time.sleep(DELAY_SECONDS)
                 
@@ -171,7 +164,6 @@ def fetch_by_date_range():
                 print(f"Erro de rede: {e}")
                 time.sleep(10)
 
-        # Avança para o próximo bloco de tempo
         current_start = current_end
 
     print("\nCarga completa de 2020 até hoje finalizada!")

@@ -32,7 +32,6 @@ CREATE TABLE cves (
 );
 
 -- KEV
--- Relacionamento 1:1 (ou 1:0) com a tabela CVE
 CREATE TABLE kev (
     cve_id VARCHAR(50) PRIMARY KEY,
     vendor_project VARCHAR(255),
@@ -61,7 +60,6 @@ CREATE TABLE cwes (
 );
 
 -- CVE <-> CWE (Muitos para Muitos)
--- Um CVE pode ter múltiplos CWEs
 CREATE TABLE cve_cwe_mapping (
     cve_id VARCHAR(50),
     cwe_id VARCHAR(20),
