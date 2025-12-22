@@ -3,10 +3,11 @@ import psycopg2
 import time
 from math import ceil
 
-# --- CONFIGURAÇÕES ---
+#configuracao de API
 EPSS_API_URL = "https://api.first.org/data/v1/epss"
-BATCH_SIZE = 90  # Quantas CVEs perguntamos por vez (recomendado: 50-100)
+BATCH_SIZE = 90
 
+#funcao de conexao com banco de dados 
 def get_connection():
     try:
         conn = psycopg2.connect(
@@ -18,17 +19,19 @@ def get_connection():
         print(f"Erro de conexão: {e}")
         return None
 
+#pega as cves ja presentes no banco
 def get_cves_from_db(conn):
     """Busca todas as CVEs que JÁ existem no seu banco"""
     cursor = conn.cursor()
     print("Lendo CVEs existentes no banco...")
-    # Opcional: Adicionar "WHERE published_date >= '2020-01-01'" se quiser garantir
+
     cursor.execute("SELECT id FROM cves")
-    # Retorna uma lista simples: ['CVE-2020-1234', 'CVE-2020-5678', ...]
+
     cves = [row[0] for row in cursor.fetchall()]
     cursor.close()
     return cves
 
+#funcao de insert no banco
 def insert_epss_scores(conn, data_list):
     """Insere um lote de notas no banco"""
     cursor = conn.cursor()
@@ -38,6 +41,7 @@ def insert_epss_scores(conn, data_list):
             epss_score = item.get("epss")
             percentile = item.get("percentile")
 
+            #query de INSERT
             sql = """
                 INSERT INTO epss_scores (cve_id, epss_score, percentile)
                 VALUES (%s, %s, %s)
@@ -54,11 +58,11 @@ def insert_epss_scores(conn, data_list):
     finally:
         cursor.close()
 
+#conecta no banco e chama a funcao de insert
 def fetch_and_load_epss_api():
     conn = get_connection()
     if not conn: return
 
-    # 1. Pega todas as suas CVEs
     all_cves = get_cves_from_db(conn)
     total_cves = len(all_cves)
     print(f"Total de CVEs no banco para consultar: {total_cves}")
@@ -67,17 +71,12 @@ def fetch_and_load_epss_api():
         print("Nenhuma CVE encontrada. Rode o script do NVD primeiro!")
         return
 
-    # 2. Processa em Lotes (Chunks)
-    # Loop de 0 até o total, pulando de 50 em 50
     for i in range(0, total_cves, BATCH_SIZE):
         batch = all_cves[i : i + BATCH_SIZE]
         
-        # Transforma a lista em uma string separada por vírgulas
-        # Ex: "CVE-2020-1234,CVE-2020-5678"
         cve_param = ",".join(batch)
         
         try:
-            # Chama a API pedindo apenas essas 50
             params = {"cve": cve_param}
             response = requests.get(EPSS_API_URL, params=params)
             
@@ -85,7 +84,6 @@ def fetch_and_load_epss_api():
                 json_response = response.json()
                 data = json_response.get("data", [])
                 
-                # Insere no banco
                 if data:
                     insert_epss_scores(conn, data)
                 
@@ -93,7 +91,6 @@ def fetch_and_load_epss_api():
             else:
                 print(f"Erro API ({response.status_code}) no lote {i}")
             
-            # Pequeno delay para ser gentil com a API da FIRST
             time.sleep(0.2)
 
         except Exception as e:

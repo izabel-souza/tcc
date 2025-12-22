@@ -3,15 +3,14 @@ import pandas as pd
 import plotly.express as px
 from sqlalchemy import create_engine
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
+#configuracao da pagina
 st.set_page_config(
     page_title="Dashboard de Vulnerabilidades (CVE)",
     page_icon="🛡️",
     layout="wide"
 )
 
-#conexao com banco de dados
-#@st.cache_data para nao recarregar o banco a cada clique
+#funcao de conexao com banco de dados
 @st.cache_data
 def load_data():
     #conexao
@@ -31,12 +30,12 @@ def load_data():
     try:
         df = pd.read_sql(query, db_connection)
         
-        # Tratamento de dados básico
+        #transforma dados
         df['published_date'] = pd.to_datetime(df['published_date'])
         df['year'] = df['published_date'].dt.year
         df['month_year'] = df['published_date'].dt.strftime('%Y-%m')
         
-        # Ordenar severidade para os gráficos ficarem bonitos
+        #ordenar severidade
         severity_order = {'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, None: 0}
         df['severity_sort'] = df['cvss_base_severity'].map(severity_order)
         df = df.sort_values('severity_sort', ascending=False)
@@ -46,35 +45,35 @@ def load_data():
         st.error(f"Erro ao conectar no banco: {e}")
         return pd.DataFrame()
 
-# --- CARGA DOS DADOS ---
+#carrega dados
 df_completo = load_data()
 
 if df_completo.empty:
     st.warning("Nenhum dado encontrado ou erro de conexão.")
     st.stop()
 
-# --- BARRA LATERAL (FILTROS) ---
+#barra lateral com filtro
 st.sidebar.header("Filtros")
 
-# Filtro de Ano
+#filtro por ano
 anos_disponiveis = sorted(df_completo['year'].unique(), reverse=True)
 anos_selecionados = st.sidebar.multiselect(
     "Selecione o Ano de Publicação:",
     options=anos_disponiveis,
-    default=anos_disponiveis[:1] # Seleciona o ano mais recente por padrão
+    default=anos_disponiveis[:1]
 )
 
-# Aplica o filtro
+#aplica filtro
 if anos_selecionados:
     df_filtrado = df_completo[df_completo['year'].isin(anos_selecionados)]
 else:
     df_filtrado = df_completo
 
-# --- CORPO PRINCIPAL DO DASHBOARD ---
+#dashboard
 st.title("🛡️ Análise de Vulnerabilidades (CVEs)")
 st.markdown("Visão geral das vulnerabilidades publicadas no NVD.")
 
-# 1. KPIs (Indicadores Chave)
+#kpis
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Total de CVEs Analisadas", f"{len(df_filtrado):,}")
@@ -87,14 +86,14 @@ with col3:
 
 st.divider()
 
-# 2. GRÁFICOS
+#graficos
 col_graf1, col_graf2 = st.columns(2)
 
-# Gráfico 1: Evolução Temporal (Linha do Tempo)
+#grafico 1 - evoluçao temporal
 with col_graf1:
     st.subheader("Publicação de CVEs ao Longo do Tempo")
     
-    # Agrupa por Mês/Ano
+    #agrupa eixo x por mes e ano
     df_timeline = df_filtrado.groupby('month_year').size().reset_index(name='count')
     
     fig_line = px.line(
@@ -106,18 +105,18 @@ with col_graf1:
     )
     st.plotly_chart(fig_line, use_container_width=True)
 
-# Gráfico 2: Distribuição por Severidade (Pizza/Donut)
+#grafico 2 - distribuiçao por severidade
 with col_graf2:
     st.subheader("Distribuição por Severidade")
     
-    # Agrupa por Severidade
+    #agrupa por severidade
     df_severity = df_filtrado.groupby('cvss_base_severity').size().reset_index(name='count')
     
     fig_pie = px.pie(
         df_severity, 
         values='count', 
         names='cvss_base_severity',
-        hole=0.4, # Faz virar um gráfico de Rosca (Donut)
+        hole=0.4, #grafico de rosca
         color='cvss_base_severity',
         color_discrete_map={
             'CRITICAL': 'red',
@@ -128,6 +127,6 @@ with col_graf2:
     )
     st.plotly_chart(fig_pie, use_container_width=True)
 
-# 3. TABELA DE DADOS BRUTOS (Expansível)
+#tabela com dados brutos no final da pagina
 with st.expander("Ver Dados Brutos"):
     st.dataframe(df_filtrado[['id', 'published_date', 'cvss_base_score', 'cvss_base_severity', 'cvss_attack_vector']])

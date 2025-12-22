@@ -4,10 +4,10 @@ import zipfile
 import io
 import csv
 
-# --- CONFIGURAÇÕES ---
-# URL oficial da MITRE com a lista completa de CWEs (CSV zipado)
+#configuracao de API
 MITRE_CWE_URL = "https://cwe.mitre.org/data/csv/2000.csv.zip"
 
+#funcao de conexao com banco de dados 
 def get_connection():
     try:
         conn = psycopg2.connect(
@@ -19,6 +19,7 @@ def get_connection():
         print(f"Erro de conexão: {e}")
         return None
 
+#funcao de insert no banco
 def fetch_and_load_cwes():
     conn = get_connection()
     if not conn: return
@@ -26,43 +27,32 @@ def fetch_and_load_cwes():
     print(f"--- Baixando Dicionário CWE da MITRE ---")
     
     try:
-        # 1. Download do ZIP
+        #download do ZIP
         response = requests.get(MITRE_CWE_URL)
         if response.status_code != 200:
             print(f"Erro ao baixar: {response.status_code}")
             return
 
-        # 2. Abrir ZIP em memória
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-            # O ZIP contém um arquivo CSV (ex: 2000.csv)
             csv_filename = z.namelist()[0]
             print(f"Lendo arquivo interno: {csv_filename}")
             
             with z.open(csv_filename) as f:
-                # Wrapper para ler bytes como texto (utf-8)
                 text_file = io.TextIOWrapper(f, encoding='utf-8', errors='replace')
-                
-                # O CSV da MITRE tem um cabeçalho antes dos dados reais? 
-                # Geralmente começa direto com headers: "CWE-ID","Name",...
                 reader = csv.DictReader(text_file)
-                
                 cursor = conn.cursor()
                 count_updated = 0
                 
                 print("Atualizando descrições no banco...")
 
                 for row in reader:
-                    # O CSV traz o ID apenas como número (ex: 79)
-                    # Seu banco usa o formato NVD (ex: CWE-79)
                     raw_id = row.get('CWE-ID')
                     name = row.get('Name')
                     
                     if raw_id and name:
                         cwe_id_formatted = f"CWE-{raw_id}"
-                        
-                        # Query de UPSERT
-                        # Se o ID já existe (inserido pelo NVD), atualizamos a descrição.
-                        # Se não existe, inserimos novo.
+
+                        #query de INSERT
                         sql = """
                             INSERT INTO cwes (id, description)
                             VALUES (%s, %s)
@@ -73,10 +63,10 @@ def fetch_and_load_cwes():
                         count_updated += 1
 
                     if count_updated % 500 == 0:
-                        conn.commit() # Commit parcial
+                        conn.commit()
                         print(f"Processados: {count_updated}...", end='\r')
 
-                conn.commit() # Commit final
+                conn.commit()
                 print(f"\n\n--- Dicionário CWE Atualizado! ---")
                 print(f"Total de registros processados: {count_updated}")
 
