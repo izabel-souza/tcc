@@ -1,5 +1,4 @@
 services:
-  # Serviço do Banco de Dados
   db:
     image: postgres:15
     container_name: tcc_postgres
@@ -12,8 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb/ddl.sql:/docker-entrypoint-initdb/ddl.sql
 
-  # Interface Gráfica para o Banco (Opcional, mas recomendado)
   pgadmin:
     image: dpage/pgadmin4
     container_name: tcc_pgadmin
