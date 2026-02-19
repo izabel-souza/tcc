@@ -70,6 +70,6 @@ CREATE TABLE cve_cwe_mapping (
 
 -- Índices para melhorar a performance dos Dashboards no Streamlit
 CREATE INDEX idx_cve_published ON cves(published_date);
-CREATE INDEX idx_cvss_severity ON cves(cvss_v3_severity);
-CREATE INDEX idx_kev_ransomware ON kev_entries(known_ransomware_usage);
+CREATE INDEX idx_cvss_severity ON cves(cvss_base_severity); 
+CREATE INDEX idx_kev_ransomware ON kev(known_ransomware_usage); 
 CREATE INDEX idx_epss_score ON epss_scores(epss_score);

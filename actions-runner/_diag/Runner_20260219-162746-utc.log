@@ -1,0 +1,196 @@
+[2026-02-19 16:27:46Z INFO HostContext] No proxy settings were found based on environmental variables (http_proxy/https_proxy/HTTP_PROXY/HTTPS_PROXY)
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'Credentials': 'C:\UFF\TCC\actions-runner\.credentials'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'Runner': 'C:\UFF\TCC\actions-runner\.runner'
+[2026-02-19 16:27:46Z INFO Listener] Runner is built for Windows (X64) - win-x64.
+[2026-02-19 16:27:46Z INFO Listener] RuntimeInformation: Microsoft Windows 10.0.26200.
+[2026-02-19 16:27:46Z INFO Listener] Version: 2.331.0
+[2026-02-19 16:27:46Z INFO Listener] Commit: 39f6c643d3032f8795fa71f1482731ca90c8e038
+[2026-02-19 16:27:46Z INFO Listener] Culture: pt-BR
+[2026-02-19 16:27:46Z INFO Listener] UI Culture: pt-BR
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO Listener] Validating directory permissions for: 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO CommandLineParser] Parse
+[2026-02-19 16:27:46Z INFO CommandLineParser] Parsing 5 args
+[2026-02-19 16:27:46Z INFO CommandLineParser] parsing argument
+[2026-02-19 16:27:46Z INFO CommandLineParser] HasArgs: False
+[2026-02-19 16:27:46Z INFO CommandLineParser] Adding Command: configure
+[2026-02-19 16:27:46Z INFO CommandLineParser] parsing argument
+[2026-02-19 16:27:46Z INFO CommandLineParser] HasArgs: True
+[2026-02-19 16:27:46Z INFO CommandLineParser] arg: url
+[2026-02-19 16:27:46Z INFO CommandLineParser] parsing argument
+[2026-02-19 16:27:46Z INFO CommandLineParser] HasArgs: True
+[2026-02-19 16:27:46Z INFO CommandLineParser] Adding option 'url': 'https://github.com/izabel-souza/tcc'
+[2026-02-19 16:27:46Z INFO CommandLineParser] parsing argument
+[2026-02-19 16:27:46Z INFO CommandLineParser] HasArgs: True
+[2026-02-19 16:27:46Z INFO CommandLineParser] arg: token
+[2026-02-19 16:27:46Z INFO CommandLineParser] parsing argument
+[2026-02-19 16:27:46Z INFO CommandLineParser] HasArgs: True
+[2026-02-19 16:27:46Z INFO CommandLineParser] Adding option 'token': '***'
+[2026-02-19 16:27:46Z INFO Listener] Arguments parsed
+[2026-02-19 16:27:46Z INFO Runner] ExecuteCommand
+[2026-02-19 16:27:46Z INFO ConfigurationStore] currentAssemblyLocation: C:\UFF\TCC\actions-runner\bin\Runner.Listener.dll
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] binPath: C:\UFF\TCC\actions-runner\bin
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] RootFolder: C:\UFF\TCC\actions-runner
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'Runner': 'C:\UFF\TCC\actions-runner\.runner'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] ConfigFilePath: C:\UFF\TCC\actions-runner\.runner
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'MigratedRunner': 'C:\UFF\TCC\actions-runner\.runner_migrated'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] MigratedConfigFilePath: C:\UFF\TCC\actions-runner\.runner_migrated
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'Credentials': 'C:\UFF\TCC\actions-runner\.credentials'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] CredFilePath: C:\UFF\TCC\actions-runner\.credentials
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'MigratedCredentials': 'C:\UFF\TCC\actions-runner\.credentials_migrated'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] MigratedCredFilePath: C:\UFF\TCC\actions-runner\.credentials_migrated
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:46Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:46Z INFO HostContext] Well known config file 'Service': 'C:\UFF\TCC\actions-runner\.service'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] ServiceConfigFilePath: C:\UFF\TCC\actions-runner\.service
+[2026-02-19 16:27:46Z INFO CommandSettings] Flag 'help': 'False'
+[2026-02-19 16:27:46Z INFO CommandSettings] Flag 'version': 'False'
+[2026-02-19 16:27:46Z INFO CommandSettings] Flag 'commit': 'False'
+[2026-02-19 16:27:46Z INFO CommandSettings] Flag 'check': 'False'
+[2026-02-19 16:27:46Z INFO CommandSettings] Command 'configure': 'True'
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: 
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: --------------------------------------------------------------------------------
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |        ____ _ _   _   _       _          _        _   _                      |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |       / ___(_) |_| | | |_   _| |__      / \   ___| |_(_) ___  _ __  ___      |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |      | |  _| | __| |_| | | | | '_ \    / _ \ / __| __| |/ _ \| '_ \/ __|     |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |      | |_| | | |_|  _  | |_| | |_) |  / ___ \ (__| |_| | (_) | | | \__ \     |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |       \____|_|\__|_| |_|\__,_|_.__/  /_/   \_\___|\__|_|\___/|_| |_|___/     |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |                                                                              |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE: |                       
+[2026-02-19 16:27:46Z INFO Terminal] WRITE: Self-hosted runner registration
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE:                         |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: |                                                                              |
+[2026-02-19 16:27:46Z INFO Terminal] WRITE LINE: --------------------------------------------------------------------------------
+[2026-02-19 16:27:46Z INFO ConfigurationManager] ConfigureAsync
+[2026-02-19 16:27:46Z INFO CommandSettings] Flag 'generateServiceConfig': 'False'
+[2026-02-19 16:27:46Z INFO ConfigurationStore] IsConfigured()
+[2026-02-19 16:27:46Z INFO ConfigurationStore] IsConfigured: False
+[2026-02-19 16:27:46Z INFO ConfigurationManager] Is configured: False
+[2026-02-19 16:27:46Z INFO CommandSettings] Arg 'url': 'https://github.com/izabel-souza/tcc'
+[2026-02-19 16:27:46Z INFO CommandSettings] Remove url from Arg dictionary.
+[2026-02-19 16:27:46Z INFO CommandSettings] Arg 'token': '***'
+[2026-02-19 16:27:46Z INFO CommandSettings] Remove token from Arg dictionary.
+[2026-02-19 16:27:47Z INFO ConfigurationManager] Http response code: OK from 'POST https://api.github.com/actions/runner-registration' (BFFF:1E4FEA:49B2AC:516E43:699739C3)
+[2026-02-19 16:27:47Z INFO ConfigurationManager] Using runner-admin flow: False
+[2026-02-19 16:27:47Z INFO ConfigurationManager] cred retrieved via GitHub auth
+[2026-02-19 16:27:47Z INFO RunnerServer] EstablishVssConnection
+[2026-02-19 16:27:47Z INFO RunnerServer] Establish connection with 100 seconds timeout.
+[2026-02-19 16:27:47Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2026-02-19 16:27:47Z INFO RunnerServer] EstablishVssConnection
+[2026-02-19 16:27:47Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2026-02-19 16:27:47Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2026-02-19 16:27:47Z INFO RunnerServer] EstablishVssConnection
+[2026-02-19 16:27:47Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2026-02-19 16:27:47Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2026-02-19 16:27:48Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2026-02-19 16:27:48Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2026-02-19 16:27:49Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2026-02-19 16:27:49Z INFO Terminal] WRITE LINE: 
+[2026-02-19 16:27:49Z INFO ConfigurationManager] Test Connection complete.
+[2026-02-19 16:27:49Z INFO HostContext] Well known directory 'Bin': 'C:\UFF\TCC\actions-runner\bin'
+[2026-02-19 16:27:49Z INFO HostContext] Well known directory 'Root': 'C:\UFF\TCC\actions-runner'
+[2026-02-19 16:27:49Z INFO HostContext] Well known config file 'RSACredentials': 'C:\UFF\TCC\actions-runner\.credentials_rsaparams'
+[2026-02-19 16:27:49Z INFO RSAEncryptedFileKeyManager] Creating new RSA key using 2048-bit key length
+[2026-02-19 16:27:49Z INFO RSAEncryptedFileKeyManager] Successfully saved RSA key parameters to file C:\UFF\TCC\actions-runner\.credentials_rsaparams
+[2026-02-19 16:27:49Z INFO CommandSettings] Arg 'runnergroup': ''
+[2026-02-19 16:27:49Z INFO CommandSettings] Flag 'unattended': 'False'
+[2026-02-19 16:27:49Z INFO PromptManager] ReadValue
+[2026-02-19 16:27:49Z INFO Terminal] WRITE: Enter the name of the runner group to add this runner to: 
+[2026-02-19 16:27:49Z INFO Terminal] WRITE: [press Enter for Default] 
+[2026-02-19 16:27:49Z INFO Terminal] READ LINE
+[2026-02-19 16:42:57Z INFO Terminal] Read value: ' '
+[2026-02-19 16:42:57Z INFO PromptManager] Falling back to the default: 'Default'
+[2026-02-19 16:42:57Z INFO Terminal] WRITE LINE: 
+[2026-02-19 16:42:57Z INFO ConfigurationManager] Found a self-hosted runner group with id 1 and name Default
+[2026-02-19 16:42:57Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2026-02-19 16:42:57Z INFO CommandSettings] Flag 'ephemeral': 'False'
+[2026-02-19 16:42:57Z INFO CommandSettings] Arg 'name': ''
+[2026-02-19 16:42:57Z INFO CommandSettings] Flag 'unattended': 'False'
+[2026-02-19 16:42:57Z INFO PromptManager] ReadValue
+[2026-02-19 16:42:57Z INFO Terminal] WRITE: Enter the name of runner: 
+[2026-02-19 16:42:57Z INFO Terminal] WRITE: [press Enter for IZABEL] 
+[2026-02-19 16:42:57Z INFO Terminal] READ LINE
+[2026-02-19 16:43:12Z INFO Terminal] Read value: 'tcc'
+[2026-02-19 16:43:12Z INFO Terminal] WRITE LINE: 
+[2026-02-19 16:43:12Z INFO CommandSettings] Arg 'labels': ''
+[2026-02-19 16:43:12Z INFO CommandSettings] Flag 'unattended': 'False'
+[2026-02-19 16:43:12Z INFO PromptManager] ReadValue
+[2026-02-19 16:43:12Z INFO Terminal] WRITE: This runner will have the following labels: 'self-hosted', 'Windows', 'X64' 
+Enter any additional labels (ex. label-1,label-2): 
+[2026-02-19 16:43:12Z INFO Terminal] WRITE: [press Enter to skip] 
+[2026-02-19 16:43:12Z INFO Terminal] READ LINE
+[2026-02-19 16:43:38Z INFO Terminal] Read value: ''
+[2026-02-19 16:43:38Z INFO Terminal] WRITE LINE: 
+[2026-02-19 16:43:39Z WARN GitHubActionsService] Authentication failed with status code 401.
+Date: Thu, 19 Feb 2026 16:42:36 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+WWW-Authenticate: Bearer
+Strict-Transport-Security: max-age=2592000
+X-TFS-ProcessId: 5e94d08f-ad87-470c-ba3c-96d24ee0d755
+ActivityId: 9c3f951b-2fab-4b9f-9a1b-cb183c2bd059
+X-TFS-Session: a7992c74-793f-472e-bc42-124fac446e57
+X-VSS-E2EID: c62f0dae-5630-4734-89ca-596a88bd63da
+X-VSS-SenderDeploymentId: 9d51f527-7c54-71ef-5aa4-7c3dc660eb8a
+X-TFS-ServiceError: The+user+%27System%3aPublicAccess%3baaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa%27+is+not+authorized+to+access+this+resource.
+X-VSS-S2STargetService: 0000005A-0000-8888-8000-000000000000/visualstudio.com
+X-VSS-UserData: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:System:PublicAccess;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+
+[2026-02-19 16:43:39Z WARN GitHubActionsService] Authentication failed with status code 401.
+Date: Thu, 19 Feb 2026 16:42:36 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+WWW-Authenticate: Bearer
+Strict-Transport-Security: max-age=2592000
+X-TFS-ProcessId: 5e94d08f-ad87-470c-ba3c-96d24ee0d755
+ActivityId: 9c3f9504-2fab-4b9f-9a1b-cb183c2bd059
+X-TFS-Session: a7992c74-793f-472e-bc42-124fac446e57
+X-VSS-E2EID: c62f0dae-5630-4734-89ca-596a88bd63da
+X-VSS-SenderDeploymentId: 9d51f527-7c54-71ef-5aa4-7c3dc660eb8a
+X-TFS-ServiceError: The+user+%27System%3aPublicAccess%3baaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa%27+is+not+authorized+to+access+this+resource.
+X-VSS-S2STargetService: 0000005A-0000-8888-8000-000000000000/visualstudio.com
+X-VSS-UserData: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:System:PublicAccess;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+
+[2026-02-19 16:43:39Z WARN GitHubActionsService] Authentication failed with status code 401.
+Date: Thu, 19 Feb 2026 16:42:36 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+WWW-Authenticate: Bearer
+Strict-Transport-Security: max-age=2592000
+X-TFS-ProcessId: 5e94d08f-ad87-470c-ba3c-96d24ee0d755
+ActivityId: 9c3f9537-2fab-4b9f-9a1b-cb183c2bd059
+X-TFS-Session: a7992c74-793f-472e-bc42-124fac446e57
+X-VSS-E2EID: c62f0dae-5630-4734-89ca-596a88bd63da
+X-VSS-SenderDeploymentId: 9d51f527-7c54-71ef-5aa4-7c3dc660eb8a
+X-TFS-ServiceError: The+user+%27System%3aPublicAccess%3baaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa%27+is+not+authorized+to+access+this+resource.
+X-VSS-S2STargetService: 0000005A-0000-8888-8000-000000000000/visualstudio.com
+X-VSS-UserData: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:System:PublicAccess;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+
+[2026-02-19 16:43:39Z ERR  GitHubActionsService] GET request to https://pipelinesghubeus6.actions.githubusercontent.com/BbwyOkGaSw7f4CJvPMEfkURs2Gc77Ms5OWBVhp9lhwXzJ7tCLO/_apis/distributedtask/pools/0/agents?agentName=tcc&includeCapabilities=False is not authorized. Details: The user 'System:PublicAccess;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' is not authorized to access this resource.
+[2026-02-19 16:43:39Z ERR  Runner] GitHub.Services.Common.VssUnauthorizedException: The user 'System:PublicAccess;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' is not authorized to access this resource.
+   at GitHub.Services.Common.VssHttpMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+   at GitHub.Services.Common.VssHttpRetryMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at GitHub.Services.WebApi.VssHttpClientBase.SendAsync(HttpRequestMessage message, HttpCompletionOption completionOption, Object userState, CancellationToken cancellationToken)
+   at GitHub.Services.WebApi.VssHttpClientBase.SendAsync[T](HttpRequestMessage message, Object userState, CancellationToken cancellationToken)
+   at GitHub.Services.WebApi.VssHttpClientBase.SendAsync[T](HttpMethod method, IEnumerable`1 additionalHeaders, Guid locationId, Object routeValues, ApiResourceVersion version, HttpContent content, IEnumerable`1 queryParameters, Object userState, CancellationToken cancellationToken)
+   at GitHub.Runner.Listener.Configuration.ConfigurationManager.ConfigureAsync(CommandSettings command)
+   at GitHub.Runner.Listener.Runner.ExecuteCommand(CommandSettings command)
+[2026-02-19 16:43:39Z ERR  Terminal] WRITE ERROR: The user 'System:PublicAccess;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' is not authorized to access this resource.
+[2026-02-19 16:43:39Z INFO Listener] Runner execution has finished with return code 1

@@ -1,20 +1,29 @@
+# --- IMPORTS ---
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from sqlalchemy import create_engine
+import os
 
-#configuracao da pagina
+# --- VARIAVEIS ---
+user = os.getenv("DB_USER", "admin")
+password = os.getenv("DB_PASS", "admin_password")
+host = os.getenv("DB_HOST", "localhost")
+db = os.getenv("DB_NAME", "vuln_db")
+
+
+# --- CONFIGURACOES DA PAGINA ---
 st.set_page_config(
     page_title="Dashboard de Vulnerabilidades (CVE)",
     page_icon="🛡️",
     layout="wide"
 )
 
-#funcao de conexao com banco de dados
+# --- FUNÇÃO SE CONECTA COM BANCO ---
 @st.cache_data
 def load_data():
     #conexao
-    db_connection_str = 'postgresql+psycopg2://admin:admin_password@localhost/vuln_db'
+    db_connection_str = f'postgresql+psycopg2://{user}:{password}@{host}/{db}'
     db_connection = create_engine(db_connection_str)
 
     query = """

@@ -1,19 +1,21 @@
+# --- IMPORTS ---
 import subprocess
 import os
 import sys
 import time
 import psycopg2
 
-# --- CONFIGURAÇÃO ---
+# --- CONFIGURACOES DO BANCO ---
 DB_CONFIG = {
-    "dbname": "vuln_db",
-    "user": "admin",
-    "password": "admin_password",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("DB_NAME", "vuln_db"),
+    "user": os.getenv("DB_USER", "admin"),
+    "password": os.getenv("DB_PASS", "admin_password"),
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": os.getenv("DB_PORT", "5432")
 }
 
-SCRIPTS_FOLDER = "populate tables"
+# --- VARIAVEIS ---
+SCRIPTS_FOLDER = "populate-tables"
 
 SCRIPTS_ORDER = [
     "cve.py",  
@@ -22,26 +24,26 @@ SCRIPTS_ORDER = [
     "cwe.py"
 ]
 
+# --- FUNÇÃO QUE ESPERA BANCO PARA CONEXAO ---
 def wait_for_db():
-    print("Aguardando banco de dados ficar online...")
     retries = 30
     while retries > 0:
         try:
             conn = psycopg2.connect(**DB_CONFIG)
             conn.close()
-            print("Banco de dados conectado")
             return True
         except psycopg2.OperationalError:
+            print(f"Aguardando banco de dados... ({retries} tentativas restantes)") 
             time.sleep(2)
             retries -= 1
-            print(f"   Tentando conectar... ({retries} tentativas restantes)")
     return False
 
+# --- FUNÇÃO QUE EXECUTA OS SCRIPTS NA PASTA 'POPULATE TABLES' ---
 def run_script(script_name):
-    """Roda um script python localizado na pasta 'populate tables'"""
+    """Roda um script python localizado na pasta 'populate-tables'"""
     script_path = os.path.join(SCRIPTS_FOLDER, script_name)
     
-    # Verifica se arquivo existe
+    # verifica se arquivo existe
     if not os.path.exists(script_path):
         print(f"Erro: Arquivo {script_path} não encontrado.")
         return False
@@ -55,14 +57,14 @@ def run_script(script_name):
         print(f"Erro ao rodar {script_name}. Código de saída: {e.returncode}")
         return False
 
+# --- FUNÇÃO PRINCIPAL ---
 def main():
     print("="*40)
     print(" INICIANDO AUTOMAÇÃO DE CARGA (ETL)")
     print("="*40)
 
-    # garante que o banco está de pé (caso tenha acabado de dar docker up)
+    # garante que o banco esta de pe
     if not wait_for_db():
-        print("❌ Falha: O banco de dados não está respondendo. Verifique o Docker.")
         sys.exit(1)
 
     # roda os scripts na ordem
@@ -74,7 +76,6 @@ def main():
 
     print("\n" + "="*40)
     print("CARGA COMPLETA FINALIZADA COM SUCESSO!")
-    print(" Agora você pode rodar: streamlit run app.py")
     print("="*40)
 
 if __name__ == "__main__":
