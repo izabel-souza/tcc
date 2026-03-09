@@ -1,0 +1,27 @@
+name: Atualizar dados TCC
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Toda semana (Domingo 00:00)
+  workflow_dispatch: # Permite rodar manualmente para testar
+
+jobs:
+  update_database:
+    runs-on: self-hosted 
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Dependencias
+        run: |
+          pip install requests psycopg2-binary python-dotenv
+          # Se você criou o requirements.txt, use: pip install -r requirements.txt
+
+      - name: Rodar script de atualizacao
+        env:
+          DB_HOST: "localhost" 
+          DB_NAME: "vuln_db"
+          DB_USER: "admin"
+          DB_PASS: ${{ secrets.DB_PASSWORD }}
+          NVD_KEY: ${{ secrets.NVD_API_KEY }}
+        run: python setup.py

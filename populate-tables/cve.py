@@ -10,7 +10,7 @@ load_dotenv()
 
 #data de inicio para pegar os dados
 START_DATE = datetime(2024, 1, 1) 
-END_DATE = datetime.now() #ate o momento atual
+START_DATE = datetime.now() - timedelta(days=10)
 
 # --- CONFIGURACOES DE API ---
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0" 
