@@ -18,9 +18,9 @@ jobs:
 
       - name: Rodar script de atualizacao
         env:
-          DB_HOST: "localhost" 
+          DB_HOST: "127.0.0.1" 
           DB_NAME: "vuln_db"
           DB_USER: "admin"
-          DB_PASS: ${{ secrets.DB_PASSWORD }}
-          NVD_KEY: ${{ secrets.NVD_API_KEY }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: python setup.py

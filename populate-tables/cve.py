@@ -26,7 +26,7 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT", "5432")
 }
 
-API_KEY = os.getenv("NVD_KEY")
+API_KEY = os.getenv("NVD_API_KEY")
 
 
 #funcao de conexao com banco de dados 

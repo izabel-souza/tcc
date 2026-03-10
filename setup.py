@@ -5,11 +5,19 @@ import sys
 import time
 import psycopg2
 
-# --- CONFIGURACOES DO BANCO ---
+# Captura as variáveis
+env_pass = os.getenv("DB_PASS")
+env_nvd = os.getenv("NVD_KEY")
+
+# Se a variável de ambiente não existir ou estiver vazia, usa o padrão
+db_password = env_pass if env_pass else "admin_password"
+nvd_api_key = env_nvd if env_nvd else "c1c6add5-4bd5-4186-be73-dbace95a4243" # sua chave padrao aqui
+
+# --- CONFIGURAÇÃO DO BANCO DE DADOS ---
 DB_CONFIG = {
     "dbname": os.getenv("DB_NAME", "vuln_db"),
     "user": os.getenv("DB_USER", "admin"),
-    "password": os.getenv("DB_PASS", "admin_password"),
+    "password": db_password,
     "host": os.getenv("DB_HOST", "127.0.0.1"),
     "port": os.getenv("DB_PORT", "5432")
 }
