@@ -1,4 +1,4 @@
-name: Atualizar dados TCC
+name: Atualizar base de dados
 
 on:
   schedule:
@@ -10,7 +10,7 @@ jobs:
     runs-on: self-hosted 
     steps:
       - name: Checkout do codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Instalar Dependencias
         run: |
@@ -21,6 +21,6 @@ jobs:
           DB_HOST: "localhost" 
           DB_NAME: "vuln_db"
           DB_USER: "admin"
-          DB_PASS: ${{ secrets.DB_PASSWORD }}
-          NVD_KEY: ${{ secrets.NVD_API_KEY }}
+          DB_PASS: "admin_password"
+          NVD_KEY: "c1c6add5-4bd5-4186-be73-dbace95a4243"
         run: python setup.py
