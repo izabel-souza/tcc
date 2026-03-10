@@ -7,7 +7,7 @@ import psycopg2
 
 # Captura as variáveis
 env_pass = os.getenv("DB_PASS")
-env_nvd = os.getenv("NVD_KEY")
+env_nvd = os.getenv("NVD_API_KEY")
 
 # Se a variável de ambiente não existir ou estiver vazia, usa o padrão
 db_password = env_pass if env_pass else "admin_password"
