@@ -10,7 +10,7 @@ DB_CONFIG = {
     "dbname": os.getenv("DB_NAME", "vuln_db"),
     "user": os.getenv("DB_USER", "admin"),
     "password": os.getenv("DB_PASS", "admin_password"),
-    "host": os.getenv("DB_HOST", "localhost"),
+    "host": os.getenv("DB_HOST", "127.0.0.1"),
     "port": os.getenv("DB_PORT", "5432")
 }
 
@@ -31,9 +31,11 @@ def wait_for_db():
         try:
             conn = psycopg2.connect(**DB_CONFIG)
             conn.close()
+            print("Conexão estabelecida com sucesso!")
             return True
-        except psycopg2.OperationalError:
-            print(f"Aguardando banco de dados... ({retries} tentativas restantes)") 
+        except psycopg2.OperationalError as e:
+            print(f"Erro de conexão: {e}") 
+            print(f"Tentando novamente... ({retries} tentativas restantes)") 
             time.sleep(2)
             retries -= 1
     return False
