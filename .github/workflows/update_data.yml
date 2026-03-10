@@ -14,8 +14,7 @@ jobs:
 
       - name: Instalar Dependencias
         run: |
-          pip install requests psycopg2-binary python-dotenv
-          # Se você criou o requirements.txt, use: pip install -r requirements.txt
+          pip install -r requirements.txt
 
       - name: Rodar script de atualizacao
         env:
