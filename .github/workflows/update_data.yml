@@ -1,4 +1,4 @@
-name: Atualizar base de dados
+name: Atualizar base de dados do TCC
 
 on:
   schedule:
