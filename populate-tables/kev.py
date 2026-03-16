@@ -1,12 +1,17 @@
 # --- IMPORTS ---
 import requests
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 # --- CONFIGURACOES DE API ---
 CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-START_DATE_FILTER = datetime(2024, 1, 1).date()
+
+MODE = os.getenv("RUN_MODE", "incremental")
+if MODE == "initial":
+    START_DATE_FILTER = datetime(2021, 1, 1).date()
+else:
+    START_DATE_FILTER = (datetime.now() - timedelta(days=7)).date()
 
 # --- CONFIGURACOES DO BANCO ---
 DB_CONFIG = {

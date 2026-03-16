@@ -9,8 +9,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 #data de inicio para pegar os dados
-START_DATE = datetime(2024, 1, 1) 
-END_DATE = datetime.now() - timedelta(days=10)
+MODE = os.getenv("RUN_MODE", "incremental")
+if MODE == "initial":
+    START_DATE = datetime(2021, 1, 1)
+    print(">>> MODO INICIAL: Coletando dados desde 2021...")
+else:
+    START_DATE = datetime.now() - timedelta(days=7)
+    print(">>> MODO INCREMENTAL: Coletando atualizações dos últimos 7 dias...")
+
+END_DATE = datetime.now()
+
 
 # --- CONFIGURACOES DE API ---
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0" 

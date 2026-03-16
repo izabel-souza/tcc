@@ -9,9 +9,9 @@ import psycopg2
 env_pass = os.getenv("DB_PASS")
 env_nvd = os.getenv("NVD_API_KEY")
 
-# Se a variável de ambiente não existir ou estiver vazia, usa o padrão
 db_password = env_pass if env_pass else "admin_password"
-nvd_api_key = env_nvd if env_nvd else "c1c6add5-4bd5-4186-be73-dbace95a4243" # sua chave padrao aqui
+
+RUN_MODE = os.getenv("RUN_MODE", "incremental")
 
 # --- CONFIGURAÇÃO DO BANCO DE DADOS ---
 DB_CONFIG = {
@@ -70,22 +70,19 @@ def run_script(script_name):
 # --- FUNÇÃO PRINCIPAL ---
 def main():
     print("="*40)
-    print(" INICIANDO AUTOMAÇÃO DE CARGA (ETL)")
+    print(f" INICIANDO ETL - MODO: {RUN_MODE.upper()}")
     print("="*40)
 
-    # garante que o banco esta de pe
     if not wait_for_db():
         sys.exit(1)
 
-    # roda os scripts na ordem
     for script in SCRIPTS_ORDER:
         success = run_script(script)
         if not success:
-            print("\nProcesso interrompido devido a erro no script anterior.")
             sys.exit(1)
 
     print("\n" + "="*40)
-    print("CARGA COMPLETA FINALIZADA COM SUCESSO!")
+    print("PROCESSO FINALIZADO!")
     print("="*40)
 
 if __name__ == "__main__":

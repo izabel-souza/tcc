@@ -20,6 +20,7 @@ Atualmente, o projeto utiliza as seguintes fontes de dados:
 * **NVD / CVE (National Vulnerability Database):** Base oficial mantida pelo NIST, contendo informações detalhadas sobre vulnerabilidades identificadas por CVE, incluindo severidade, descrição, produtos afetados e classificações de fraquezas (CWE).
 * **EPSS (Exploit Prediction Scoring System):** Sistema que fornece uma pontuação probabilística indicando a chance de uma vulnerabilidade ser explorada, auxiliando na priorização baseada em risco real.
 * **KEV (Known Exploited Vulnerabilities):** Lista mantida pela CISA que identifica vulnerabilidades já exploradas ativamente, sendo uma fonte crítica para análises de risco.
+* **CWE (Common Weakness Enumeration):** Dicionário que classifica dos tipos de falhas de programação que causam vulnerabilidades 
 
 ## Arquitetura do Projeto
 
@@ -28,9 +29,24 @@ A arquitetura do projeto foi definida visando simplicidade, flexibilidade e poss
 **Componentes principais:**
 
 * **Python:** Scripts responsáveis por consumir as APIs das fontes de dados. Realizam o tratamento, normalização e inserção dos dados no banco.
+* **Streamlit & Plotly:** Biblioteca utilizada para a construção dos dashboards e visualizações interativas, permitindo rápida prototipação e alto nível de personalização.
 * **PostgreSQL:** Banco de dados relacional utilizado para armazenar os dados consolidados. Executado em ambiente containerizado.
 * **Docker:** Utilizado para padronizar o ambiente de execução do banco de dados, facilitando testes locais e futura migração para nuvem.
-* **Streamlit:** Biblioteca utilizada para a construção dos dashboards e visualizações interativas, permitindo rápida prototipação e alto nível de personalização.
+* **Self-hosted Runner:** Execução dos fluxos de automação diretamente no ambiente local para integração com o banco de dados Docker.
+* **GitHub Actions:** Automação do pipeline de atualização de dados.
+
+
+## Automação com GitHub Actions
+O projeto conta com uma esteira de CI/CD para Dados que mantém a base atualizada semanalmente.
+
+Workflow Agendado
+Localizado em ```.github/workflows/update_data.yml```, o fluxo é executado automaticamente todo domingo à meia-noite, utilizando um Self-hosted Runner para acessar o banco de dados local com segurança.
+
+Segurança (GitHub Secrets)
+As credenciais de acesso não estão expostas no código. Para o funcionamento da automação, é necessário configurar os seguintes segredos no repositório do GitHub:
+
+>       DB_PASS: Senha do banco de dados PostgreSQL.
+>       NVD_API_KEY: Chave de acesso à API do NIST.
 
 ---
 
@@ -39,9 +55,10 @@ A arquitetura do projeto foi definida visando simplicidade, flexibilidade e poss
 Siga os passos abaixo para configurar o ambiente e executar o projeto localmente.
 
 ### Pré-requisitos
-* [Docker](https://www.docker.com/) e Docker Compose instalados.
-* [Python 3.9+](https://www.python.org/) instalado.
 * Git instalado.
+* [Docker Desktop](https://www.docker.com/) instalado.
+* [Python 3.9+](https://www.python.org/) instalado.
+* [GitHub Actions Runner](https://github.com/settings/actions/runners) configurado localmente.
 
 ### 1. Configuração do Banco de Dados (Docker)
 
@@ -51,60 +68,58 @@ Na raiz do projeto, execute o comando para subir os containers do PostgreSQL e d
 docker-compose up -d
 ```
 
-2. Acesso e Configuração do pgAdmin
-Abra o navegador e acesse: http://localhost:5050
+1.2. Acesso e Configuração do pgAdmin
+* Abra o navegador e acesse: http://localhost:5050
+* Faça login com as credenciais configuradas no docker-compose.yml:
 
-Faça login com as credenciais configuradas no docker-compose.yml:
+>       Email: admin@admin.com 
+>       Senha: admin
 
-Email: admin@admin.com
+1.3 Conectar ao Servidor:
 
-Senha: admin
+* No pgAdmin, clique com botão direito em Servers > Register > Server.
 
-Conectar ao Servidor:
+* Na aba General:
+>       Name (ex: Local Docker).
 
-No pgAdmin, clique com botão direito em Servers > Register > Server.
+* Na aba Connection:
+>       Host name/address: db (ou host.docker.internal)
+>       Port: 5432
+>       Username: admin
+>       Password: admin_password
 
-Na aba General, dê um nome (ex: Local Docker).
+> As tabelas são criadas no primeiro boot através do script `ddl.sql` localizado em `docker-entrypoint-initdb/`.
 
-Na aba Connection:
+* Clique em Save.
 
-Host name/address: db (ou host.docker.internal)
 
-Port: 5432
-
-Username: admin
-
-Password: admin_password
-
-Clique em Save.
-
-Criar as Tabelas:
-
-Abra a Query Tool no banco de dados vuln_db.
-
-Vá até a pasta schema/ deste projeto, copie o conteúdo do script SQL (DDL) e execute-o na Query Tool para criar as tabelas e índices.
-
-3. Instalação das Dependências Python
+### 2. Instalação das Dependências
+Utilize o arquivo de requerimentos para preparar o ambiente:
 
 ```bash
-pip install requests psycopg2 pandas plotly streamlit sqlalchemy
+pip install -r requirements.txt
 ```
 
+### 3. Coleta e Orquestração de Dados (ETL)
 
-4. Coleta de Dados (ETL)
-Os scripts de coleta estão localizados na pasta populate tables. Eles devem ser executados para baixar os dados das APIs e popular o banco.
+O projeto utiliza um Orquestrador Central que gerencia a ordem das cargas e a integridade do banco:
 
-⚠️ Importante: Execute os scripts na ordem abaixo para garantir a integridade dos dados (Chaves Estrangeiras):
+```bash
+python setup.py
+```
+O setup.py automatiza a execução dos scripts de coleta localizados na pasta populate-tables. Ele garante que os dados sejam baixados das APIs e inseridos no banco respeitando a integridade referencial (Chaves Estrangeiras).
 
-cve.py: Base principal (deve ser o primeiro).
+⚠️ Importante: O orquestrador executa os scripts na ordem abaixo para evitar erros de dependência:
+
+cve.py: Base principal (deve ser o primeiro a ser populado).
 
 kev.py: Catálogo de vulnerabilidades exploradas.
 
-epss.py: Pontuações de risco.
+epss.py: Pontuações de risco de exploração.
 
-cwe.py: Dicionário de fraquezas.
+cwe.py: Dicionário de fraquezas de software.
 
-Comando para execução (certifique-se de estar com o ambiente virtual ativo):
+Se preferir a execução manual (certifique-se de estar com o ambiente virtual ativo):
 
 ```bash
 # Entra na pasta dos scripts
@@ -122,7 +137,7 @@ python cwe.py
 cd ..
 ```
 
-5. Execução do Dashboard
+### 4. Execução do Dashboard
 Com o banco populado, inicie a aplicação Streamlit na raiz do projeto:
 
 ```bash

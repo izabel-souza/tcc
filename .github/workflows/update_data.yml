@@ -18,6 +18,7 @@ jobs:
 
       - name: Rodar script de atualizacao
         env:
+          RUN_MODE: "incremental"
           DB_HOST: "127.0.0.1" 
           DB_NAME: "vuln_db"
           DB_USER: "admin"

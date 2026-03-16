@@ -11,7 +11,6 @@ password = os.getenv("DB_PASS", "admin_password")
 host = os.getenv("DB_HOST", "localhost")
 db = os.getenv("DB_NAME", "vuln_db")
 
-
 # --- CONFIGURACOES DA PAGINA ---
 st.set_page_config(
     page_title="Dashboard de Vulnerabilidades (CVE)",
