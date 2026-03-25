@@ -7,26 +7,26 @@ CREATE TABLE cves (
     cve_tags TEXT[],
     description TEXT,                        
 
-    -- Métricas CVSS
+    -- metricas CVSS
     cvss_metric_type VARCHAR(20), 
     cvss_version VARCHAR(10),        
     cvss_vector_string VARCHAR(100),      
     cvss_base_score DECIMAL(4,1),           
     cvss_base_severity VARCHAR(20),        
     
-    -- Vetores de Ataque
+    -- vetores de ataque
     cvss_attack_vector VARCHAR(50),       
     cvss_attack_complexity VARCHAR(50),     
     cvss_privileges_required VARCHAR(50),    
     cvss_user_interaction VARCHAR(50),       
     cvss_scope VARCHAR(50),                  
     
-    -- Impactos
+    -- impactos
     cvss_confidentiality_impact VARCHAR(20), 
     cvss_integrity_impact VARCHAR(20),      
     cvss_availability_impact VARCHAR(20),    
     
-    -- Scores Adicionais 
+    -- scores adicionais 
     cvss_exploitability_score DECIMAL(4,1), 
     cvss_impact_score DECIMAL(4,1)       
 );
@@ -68,8 +68,34 @@ CREATE TABLE cve_cwe_mapping (
     FOREIGN KEY (cwe_id) REFERENCES cwes(id)
 );
 
--- Índices para melhorar a performance dos Dashboards no Streamlit
+-- MITRE ATT&CK: taticas 
+CREATE TABLE mitre_tactics (
+    id VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(255),
+    description TEXT,
+    url VARCHAR(255)
+);
+
+-- MITRE ATT&CK: tecnicas
+CREATE TABLE mitre_techniques (
+    id VARCHAR(20) PRIMARY KEY, 
+    name VARCHAR(255),
+    description TEXT,
+    url VARCHAR(255)
+);
+
+-- CAPEC 
+-- tabela de cruzamento entre MITRE ATT&CK e CWE
+CREATE TABLE cwe_mitre_mapping (
+    cwe_id VARCHAR(20),
+    mitre_id VARCHAR(20),
+    PRIMARY KEY (cwe_id, mitre_id)
+);
+
+-- indices para melhorar a performance dos Dashboards no Streamlit
 CREATE INDEX idx_cve_published ON cves(published_date);
 CREATE INDEX idx_cvss_severity ON cves(cvss_base_severity); 
 CREATE INDEX idx_kev_ransomware ON kev(known_ransomware_usage); 
 CREATE INDEX idx_epss_score ON epss_scores(epss_score);
+CREATE INDEX idx_cwe_map ON cwe_mitre_mapping(cwe_id);
+CREATE INDEX idx_mitre_map ON cwe_mitre_mapping(mitre_id);

@@ -29,7 +29,9 @@ SCRIPTS_ORDER = [
     "cve.py",  
     "kev.py",  
     "epss.py",
-    "cwe.py"
+    "cwe.py",
+    "mitreattack.py",
+    "capec.py"
 ]
 
 # --- FUNÇÃO QUE ESPERA BANCO PARA CONEXAO ---
