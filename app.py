@@ -244,7 +244,40 @@ with tab4:
             st.plotly_chart(fig_tech, use_container_width=True)
             
             
-    # grafico com top 10 taticas a ser feito
+    # grafico com top 10 taticas 
+    with col_mitre2:
+        st.subheader("Top 10 Táticas Mais Reportadas (Objetivo do Atacante)")
+
+        query_taticas = """
+            SELECT 
+                tac.name AS tatica,
+                COUNT(DISTINCT ccm.cve_id) AS qtd_cves
+            FROM cwe_mitre_mapping cmm
+            JOIN mitre_techniques tec ON (tec.id = cmm.mitre_id OR tec.id = 'T' || cmm.mitre_id)
+            JOIN mitre_tactic_technique mtt ON mtt.technique_id = tec.id
+            JOIN mitre_tactics tac ON tac.id = mtt.tactic_id
+            JOIN cve_cwe_mapping ccm ON ccm.cwe_id = cmm.cwe_id
+            GROUP BY tac.name
+            ORDER BY qtd_cves DESC
+            LIMIT 10
+        """
+
+        df_taticas = get_data(query_taticas)
+
+        if not df_taticas.empty:
+            fig_taticas = px.bar(
+                df_taticas, 
+                x='qtd_cves', 
+                y='tatica', 
+                orientation='h', 
+                labels={'qtd_cves': 'Nº de CVEs Associadas', 'tatica': 'Tática MITRE'},
+                color='qtd_cves', 
+                color_continuous_scale='Blues' # Usei azul para diferenciar das Técnicas que estão em Vermelho
+            )
+            fig_taticas.update_layout(yaxis={'categoryorder':'total ascending'})
+            st.plotly_chart(fig_taticas, use_container_width=True)
+        else:
+            st.warning("Ainda não existem dados suficientes para gerar o gráfico de Táticas.")
 
     st.divider()
 

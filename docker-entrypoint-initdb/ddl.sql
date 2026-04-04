@@ -85,11 +85,18 @@ CREATE TABLE mitre_techniques (
 );
 
 -- CAPEC 
--- tabela de cruzamento entre MITRE ATT&CK (Técnicas) e CWE
+-- tabela de cruzamento entre MITRE ATT&CK (tecnicas) e CWE
 CREATE TABLE cwe_mitre_mapping (
     cwe_id VARCHAR(20),
     mitre_id VARCHAR(20),
     PRIMARY KEY (cwe_id, mitre_id)
+);
+
+-- tabela de cruzamento entre taticas e tecnicas do MITRE
+CREATE TABLE mitre_tactic_technique (
+    tactic_id VARCHAR(20),
+    technique_id VARCHAR(20),
+    PRIMARY KEY (tactic_id, technique_id)
 );
 
 -- indices para melhorar a performance dos Dashboards no Streamlit
@@ -99,3 +106,5 @@ CREATE INDEX idx_kev_ransomware ON kev(known_ransomware_usage);
 CREATE INDEX idx_epss_score ON epss_scores(epss_score);
 CREATE INDEX idx_cwe_map ON cwe_mitre_mapping(cwe_id);
 CREATE INDEX idx_mitre_map ON cwe_mitre_mapping(mitre_id);
+CREATE INDEX idx_mtt_tactic ON mitre_tactic_technique(tactic_id);
+CREATE INDEX idx_mtt_technique ON mitre_tactic_technique(technique_id);
