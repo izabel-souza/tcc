@@ -80,7 +80,7 @@ def fetch_and_load_capec_mapping():
                             if entry is not None and entry.text:
                                 mitre_techs.append(entry.text)
                                 
-                    # se o ataque liga uma CWE a uma teccnica do MITRE, insert no banco
+                    # se o ataque liga uma CWE a uma tecnica do MITRE, insert no banco
                     for cwe in cwes:
                         for tech in mitre_techs:
                             sql = """

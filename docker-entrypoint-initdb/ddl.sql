@@ -85,7 +85,7 @@ CREATE TABLE mitre_techniques (
 );
 
 -- CAPEC 
--- tabela de cruzamento entre MITRE ATT&CK e CWE
+-- tabela de cruzamento entre MITRE ATT&CK (Técnicas) e CWE
 CREATE TABLE cwe_mitre_mapping (
     cwe_id VARCHAR(20),
     mitre_id VARCHAR(20),
