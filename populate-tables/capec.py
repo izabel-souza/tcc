@@ -92,7 +92,7 @@ def fetch_and_load_capec_mapping():
                             count_mappings += 1
 
                 conn.commit()
-                print(f"\n--- Sucesso! ---")
+                print("--- Carga MITRE ATTACK Finalizada ----")
                 print(f"Total de cruzamentos CWE <-> MITRE inseridos: {count_mappings}")
 
     except Exception as e:

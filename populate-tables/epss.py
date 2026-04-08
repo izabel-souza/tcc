@@ -30,9 +30,9 @@ def get_connection():
 
 #pega as cves ja presentes no banco
 def get_cves_from_db(conn):
-    """Busca todas as CVEs que JÁ existem no seu banco"""
+    """Busca todas as CVEs presentes no banco"""
     cursor = conn.cursor()
-    print("Lendo CVEs existentes no banco...")
+    print("Lendo CVEs existentes no banco.")
 
     cursor.execute("SELECT id FROM cves")
 
@@ -78,10 +78,6 @@ def fetch_and_load_epss_api():
     total_cves = len(all_cves)
     print(f"Total de CVEs no banco para consultar: {total_cves}")
 
-    if total_cves == 0:
-        print("Nenhuma CVE encontrada. Rode o script do NVD primeiro!")
-        return
-
     for i in range(0, total_cves, BATCH_SIZE):
         batch = all_cves[i : i + BATCH_SIZE]
         
@@ -98,7 +94,7 @@ def fetch_and_load_epss_api():
                 if data:
                     insert_epss_scores(conn, data)
                 
-                print(f"Processado: {i + len(batch)}/{total_cves}...", end='\r')
+                print(f"Processado: {i + len(batch)}/{total_cves}.", end='\r')
             else:
                 print(f"Erro API ({response.status_code}) no lote {i}")
             
@@ -108,7 +104,7 @@ def fetch_and_load_epss_api():
             print(f"Erro de conexão no lote {i}: {e}")
             time.sleep(5)
 
-    print("\n--- Atualização EPSS via API Finalizada! ---")
+    print("--- Carga EPSS Finalizada ---")
     conn.close()
 
 
