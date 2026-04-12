@@ -51,7 +51,7 @@ def fetch_and_load_cwes():
                 cursor = conn.cursor()
                 count_updated = 0
                 
-                print("Atualizando descrições no banco...")
+                print("Atualizando descrições no banco.")
 
                 for row in reader:
                     raw_id = row.get('CWE-ID')
@@ -72,7 +72,7 @@ def fetch_and_load_cwes():
 
                     if count_updated % 500 == 0:
                         conn.commit()
-                        print(f"Processados: {count_updated}...", end='\r')
+                        print(f"Processados: {count_updated}.", end='\r')
 
                 conn.commit()
                 print(f"\n\n--- Dicionário CWE Atualizado! ---")

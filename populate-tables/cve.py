@@ -11,11 +11,11 @@ load_dotenv()
 #data de inicio para pegar os dados
 MODE = os.getenv("RUN_MODE", "incremental")
 if MODE == "initial":
-    START_DATE = datetime(2021, 1, 1)
-    print(">>> MODO INICIAL: Coletando dados desde 2021...")
+    START_DATE = datetime(2015, 1, 1)
+    print(">>> MODO INICIAL: Coletando dados desde 2015.")
 else:
     START_DATE = datetime.now() - timedelta(days=7)
-    print(">>> MODO INCREMENTAL: Coletando atualizações dos últimos 7 dias...")
+    print(">>> MODO INCREMENTAL: Coletando atualizações dos últimos 7 dias.")
 
 END_DATE = datetime.now()
 
@@ -165,18 +165,18 @@ def fetch_by_date_range():
                     total_results = data.get("totalResults", 0)
                     vulnerabilities = data.get("vulnerabilities", [])
                     
-                    print(f"   - Página (Index {start_index}): Encontrados {len(vulnerabilities)} CVEs...")
+                    print(f"   - Página (Index {start_index}): Encontrados {len(vulnerabilities)} CVEs.")
                     
                     for item in vulnerabilities:
                         insert_cve_data(conn, item.get("cve", {}))
                     
                     start_index += RESULTS_PER_PAGE
             
-                    print(f"   - Aguardando {DELAY_SECONDS}s...")
+                    print(f"   - Aguardando {DELAY_SECONDS}s.")
                     time.sleep(DELAY_SECONDS)
                 
                 else:
-                    print(f"Erro API ({response.status_code}). Tentando novamente em 10s...")
+                    print(f"Erro API ({response.status_code}). Tentando novamente em 10s.")
                     time.sleep(10)
             
             except Exception as e:
@@ -185,9 +185,8 @@ def fetch_by_date_range():
 
         current_start = current_end
 
-    print("\nCarga completa de 2024 até hoje finalizada!")
+    print("--- Carga CVE Finalizada ---")
     conn.close()
-
 
 if __name__ == "__main__":
     fetch_by_date_range()

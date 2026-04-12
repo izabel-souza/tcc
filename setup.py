@@ -45,7 +45,7 @@ def wait_for_db():
             return True
         except psycopg2.OperationalError as e:
             print(f"Erro de conexão: {e}") 
-            print(f"Tentando novamente... ({retries} tentativas restantes)") 
+            print(f"Tentando novamente. ({retries} tentativas restantes).") 
             time.sleep(2)
             retries -= 1
     return False

@@ -9,7 +9,7 @@ CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_v
 
 MODE = os.getenv("RUN_MODE", "incremental")
 if MODE == "initial":
-    START_DATE_FILTER = datetime(2021, 1, 1).date()
+    START_DATE_FILTER = datetime(2015, 1, 1).date()
 else:
     START_DATE_FILTER = (datetime.now() - timedelta(days=7)).date()
 
@@ -103,7 +103,7 @@ def fetch_and_load_kev():
         vulnerabilities = data.get("vulnerabilities", [])
         
         total = len(vulnerabilities)
-        print(f"Catálogo baixado. Total de itens: {total}. Filtrando e inserindo...")
+        print(f"Catálogo baixado. Total de itens: {total}.")
 
         count_inserted = 0
         for item in vulnerabilities:
@@ -111,7 +111,7 @@ def fetch_and_load_kev():
             count_inserted += 1
 
             if count_inserted % 100 == 0:
-                print(f"Processados: {count_inserted}/{total}...")
+                print(f"Processados: {count_inserted}/{total}.")
 
         print("--- Carga KEV Finalizada ---")
 

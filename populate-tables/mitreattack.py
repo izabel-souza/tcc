@@ -46,11 +46,23 @@ def fetch_and_load_mitre():
         data = response.json()
         objects = data.get("objects", [])
         
+        # 1. Mapear os nomes curtos das Táticas para os seus IDs oficiais
+        tactic_shortname_to_id = {}
+        for obj in objects:
+            if obj.get("type") == "x-mitre-tactic":
+                ext_refs = obj.get("external_references", [])
+                t_id = next((ref.get("external_id") for ref in ext_refs if ref.get("source_name") == "mitre-attack"), None)
+                shortname = obj.get("x_mitre_shortname")
+                if t_id and shortname:
+                    tactic_shortname_to_id[shortname] = t_id
+
         tactics_count = 0
         techniques_count = 0
+        mappings_count = 0
 
-        print("Processando objetos STIX...")
+        print("Processando objetos STIX e criando relações (Tática <-> Técnica)...")
 
+        # 2. Inserir os dados e criar as pontes
         for obj in objects:
             obj_type = obj.get("type")
             
@@ -85,7 +97,7 @@ def fetch_and_load_mitre():
                 cursor.execute(sql, (mitre_id, name, description, url))
                 tactics_count += 1
 
-            # insert das tecnicas
+            # insert das tecnicas e do mapeamento
             elif obj_type == "attack-pattern":
                 sql = """
                     INSERT INTO mitre_techniques (id, name, description, url)
@@ -98,10 +110,26 @@ def fetch_and_load_mitre():
                 cursor.execute(sql, (mitre_id, name, description, url))
                 techniques_count += 1
 
+                # Mapear qual Tática essa Técnica usa
+                for phase in obj.get("kill_chain_phases", []):
+                    if phase.get("kill_chain_name") == "mitre-attack":
+                        phase_name = phase.get("phase_name")
+                        tactic_id = tactic_shortname_to_id.get(phase_name)
+                        
+                        if tactic_id:
+                            sql_rel = """
+                                INSERT INTO mitre_tactic_technique (tactic_id, technique_id)
+                                VALUES (%s, %s)
+                                ON CONFLICT DO NOTHING;
+                            """
+                            cursor.execute(sql_rel, (tactic_id, mitre_id))
+                            mappings_count += 1
+
         conn.commit()
         print("\n--- MITRE ATT&CK Atualizado! ---")
         print(f"Táticas processadas: {tactics_count}")
         print(f"Técnicas processadas: {techniques_count}")
+        print(f"Ligações Tática-Técnica criadas: {mappings_count}")
 
     except Exception as e:
         conn.rollback()
@@ -110,7 +138,6 @@ def fetch_and_load_mitre():
         if conn:
             cursor.close()
             conn.close()
-
 
 if __name__ == "__main__":
     fetch_and_load_mitre()
