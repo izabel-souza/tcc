@@ -178,6 +178,38 @@ with tab2:
         fig_p.update_layout(yaxis={'categoryorder':'total ascending'})
         st.plotly_chart(fig_p, width='stretch', key=f"prod_{filtro_sql}")
 
+
+    # (grafico de dispersao) - CVSS (Dano Teórico) vs EPSS (Probabilidade Real)
+    st.subheader("CVSS (Dano Teórico) vs EPSS (Probabilidade Real)")
+    st.info("💡 A área no canto superior direito indica as vulnerabilidades mais críticas que devem ser corrigidas de imediato (Alto Dano + Alta Probabilidade).")
+
+    scatter_query = """
+        SELECT 
+            c.id, 
+            c.cvss_base_score, 
+            e.epss_score, 
+            c.cvss_base_severity
+        FROM cves c
+        JOIN epss_scores e ON c.id = e.cve_id
+        LEFT JOIN kev k ON c.id = k.cve_id
+        WHERE c.cvss_base_score IS NOT NULL
+        LIMIT 5000
+    """
+    df_scatter = get_data(scatter_query)
+    fig_scatter = px.scatter(
+        df_scatter, x='cvss_base_score', y='epss_score',
+        hover_data=['id', 'cvss_base_severity'],
+        labels={'cvss_base_score': 'CVSS Score (0-10)', 'epss_score': 'EPSS Score (Probabilidade 0-1)'},
+        opacity=0.7
+    )
+    
+    fig_scatter.update_layout(
+        legend_itemclick="toggleothers",       
+        legend_itemdoubleclick="toggle"        
+    )    
+    
+    st.plotly_chart(fig_scatter, use_container_width=True)
+
 # ==========================================
 # ABA 3: RAIZ DO PROBLEMA (CWE)
 # ==========================================
