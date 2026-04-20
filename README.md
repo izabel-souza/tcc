@@ -8,10 +8,13 @@ O projeto busca consolidar diferentes bases de dados sobre vulnerabilidades, per
 
 O objetivo principal do projeto é desenvolver uma plataforma de visualização interativa que permita analisar vulnerabilidades de segurança a partir de diferentes perspectivas, como severidade, probabilidade de exploração e exploração ativa conhecida.
 
-O sistema foi pensado para:
-* Consolidar dados de múltiplas fontes.
-* Normalizar e armazenar essas informações em um banco de dados relacional.
-* Disponibilizar dashboards interativos para análise.
+O sistema foi desenvolvido para:
+
+* Análise Histórica e Temporal: Cobertura abrangente de vulnerabilidades registradas entre 2015 e 2026.
+
+* Priorização Baseada em Risco: Cruzamento de dados para separar falhas teóricas de ameaças iminentes.
+
+* Correlação com Ataques Reais: Mapeamento de falhas de software para táticas e técnicas do framework MITRE ATT&CK.
 
 ## Fontes de Dados Utilizadas
 
@@ -21,6 +24,7 @@ Atualmente, o projeto utiliza as seguintes fontes de dados:
 * **EPSS (Exploit Prediction Scoring System):** Sistema que fornece uma pontuação probabilística indicando a chance de uma vulnerabilidade ser explorada, auxiliando na priorização baseada em risco real.
 * **KEV (Known Exploited Vulnerabilities):** Lista mantida pela CISA que identifica vulnerabilidades já exploradas ativamente, sendo uma fonte crítica para análises de risco.
 * **CWE (Common Weakness Enumeration):** Dicionário que classifica dos tipos de falhas de programação que causam vulnerabilidades 
+* **MITRE ATT&CK & CAPEC**: Frameworks que descrevem os objetivos (Táticas) e métodos (Técnicas) utilizados pelos adversários.
 
 ## Arquitetura do Projeto
 
