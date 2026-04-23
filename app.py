@@ -31,7 +31,7 @@ def get_data(query):
         return pd.read_sql(text(query), conn)
 
 # --- CABEÇALHO ---
-st.title("🛡️ Dashboard de Ameaças e Vulnerabilidades")
+st.title("Dashboard de Ameaças e Vulnerabilidades")
 st.markdown("Análise de Vulnerabilidades, Risco de Exploração e Táticas MITRE ATT&CK")
 
 # ==========================================
@@ -78,11 +78,12 @@ filtro_sql = f"{condicao_ano} AND {condicao_sev}"
 filtro_sql_alias = f"{condicao_ano_alias} AND {condicao_sev_alias}"
 
 # Criação das Abas
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Visão Geral (CVE & CVSS)", 
     "Risco e Exploração (EPSS & KEV)", 
     "Raiz do Problema (CWE)", 
-    "Padrões de Ataque (MITRE)"
+    "Padrões de Ataque (MITRE)",
+    "Casos de Uso"
 ])
 
 # ==========================================
@@ -208,7 +209,7 @@ with tab2:
         legend_itemdoubleclick="toggle"        
     )    
     
-    st.plotly_chart(fig_scatter, use_container_width=True)
+    st.plotly_chart(fig_scatter, width='stretch')
 
 # ==========================================
 # ABA 3: RAIZ DO PROBLEMA (CWE)
@@ -361,3 +362,163 @@ with tab4:
             st.plotly_chart(fig_tree, width='stretch')
     else:
             st.warning("Sem dados suficientes para o detalhamento.")
+
+# ==========================================
+# ABA 5: CASOS DE USO
+# ==========================================
+with tab5:
+
+    #CASO DE USO 1
+    st.header("Priorização de Correção de Vulnerabilidades")
+
+    query_prioridade = f"""
+        SELECT 
+            c.id,
+            c.cvss_base_score,
+            c.cvss_base_severity,
+            e.epss_score,
+            CASE WHEN k.cve_id IS NOT NULL THEN TRUE ELSE FALSE END as is_kev,
+            CASE 
+                WHEN k.cve_id IS NOT NULL AND (c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1) THEN 'Prioridade Máxima'
+                WHEN k.cve_id IS NOT NULL THEN 'Risco Subestimado'
+                WHEN c.cvss_base_score >= 7.0 AND e.epss_score < 0.1 THEN 'Atenção (Vigilância)'
+                ELSE 'Monitoramento'
+            END as categoria_prioridade
+        FROM cves c
+        JOIN epss_scores e ON c.id = e.cve_id
+        LEFT JOIN kev k ON c.id = k.cve_id
+        WHERE {filtro_sql_alias}
+        ORDER BY is_kev DESC, e.epss_score DESC, c.cvss_base_score DESC
+        LIMIT 5000
+    """
+    df_prioridade = get_data(query_prioridade)
+
+    if not df_prioridade.empty:
+        fig_scatter = px.scatter(
+            df_prioridade, 
+            x='cvss_base_score', 
+            y='epss_score',
+            color='categoria_prioridade',
+            symbol='is_kev',
+            hover_data=['id', 'cvss_base_severity'],
+            labels={
+                'cvss_base_score': 'Severidade Técnica (CVSS)',
+                'epss_score': 'Probabilidade de Exploração (EPSS)',
+                'categoria_prioridade': 'Classificação de Risco'
+            },
+            color_discrete_map={
+                'Prioridade Máxima': 'darkred',
+                'Risco Subestimado': 'orange',
+                'Atenção (Vigilância)': 'gold',
+                'Monitoramento': 'gray'
+            },
+            title="Correlação CVSS x EPSS (Destaque para KEV)"
+        )
+        
+        # Adicionando linhas de quadrante para facilitar a leitura
+        fig_scatter.add_hline(y=0.1, line_dash="dot", line_color="red", annotation_text="Alta Probabilidade (EPSS > 0.1)")
+        fig_scatter.add_vline(x=7.0, line_dash="dot", line_color="orange", annotation_text="Alta Severidade (CVSS > 7.0)")
+        
+        st.plotly_chart(fig_scatter, width='stretch', key=f"scatter_prioridade_{filtro_sql}")
+
+    st.divider()
+
+    #CASO DE USO 2
+    st.subheader(" Identificação de fraquezas de software mais associadas a risco real")
+    
+    q_cwe_comp = f"""
+        SELECT 
+            cw.id as cwe_id,
+            SUBSTRING(cw.description, 1, 25) || '...' as fraqueza,
+            COUNT(DISTINCT c.id) as total_cves,
+            COUNT(DISTINCT k.cve_id) as qtd_no_kev
+        FROM cwes cw
+        JOIN cve_cwe_mapping m ON cw.id = m.cwe_id
+        JOIN cves c ON m.cve_id = c.id
+        LEFT JOIN kev k ON c.id = k.cve_id
+        WHERE {filtro_sql_alias}
+        GROUP BY 1, 2
+        ORDER BY total_cves DESC LIMIT 10
+    """
+    df_cwe_comp = get_data(q_cwe_comp)
+    
+    # Gráfico de Barras Agrupadas
+    fig_cwe_comp = px.bar(
+        df_cwe_comp, x='fraqueza', y=['total_cves', 'qtd_no_kev'],
+        barmode='group',
+        labels={'value': 'Quantidade de CVEs', 'variable': 'Categoria', 'fraqueza': 'Tipo de Falha (CWE)'},
+        title="CWEs mais comuns: Total vs. Presença no KEV"
+    )
+    st.plotly_chart(fig_cwe_comp, width='stretch', key=f"cwe_comp_{filtro_sql}")
+
+    st.divider()
+
+    #CASOS DE USO 4 E 5
+    col_p1, col_p2 = st.columns(2)
+    
+    with col_p1:
+        st.subheader("Perfil de vulnerabilidades exploradas em campanhas reais X Análise focada em ransomware")
+        q_profile = f"""
+            SELECT 
+                CASE WHEN k.cve_id IS NOT NULL THEN 'No KEV' ELSE 'Fora do KEV' END as grupo,
+                ROUND(AVG(c.cvss_base_score), 2) as cvss_medio,
+                ROUND(AVG(e.epss_score), 4) as epss_medio
+            FROM cves c
+            LEFT JOIN kev k ON c.id = k.cve_id
+            LEFT JOIN epss_scores e ON c.id = e.cve_id
+            WHERE {filtro_sql_alias} GROUP BY 1
+        """
+        df_profile = get_data(q_profile)
+        st.table(df_profile.set_index('grupo'))
+
+    with col_p2:
+        st.subheader("Perfil Técnico de Ransomware")
+        q_ran_cwe = f"""
+            SELECT cw.id as cwe, COUNT(k.cve_id) as qtd
+            FROM kev k
+            JOIN cve_cwe_mapping m ON k.cve_id = m.cve_id
+            JOIN cwes cw ON m.cwe_id = cw.id
+            JOIN cves c ON k.cve_id = c.id
+            WHERE k.known_ransomware_usage = TRUE AND {filtro_sql_alias}
+            GROUP BY 1 ORDER BY 2 DESC LIMIT 5
+        """
+        df_ran_cwe = get_data(q_ran_cwe)
+        fig_ran_cwe = px.pie(df_ran_cwe, values='qtd', names='cwe', hole=0.3, title="CWEs mais usadas em Ransomware")
+        st.plotly_chart(fig_ran_cwe, width='stretch', key=f"ran_cwe_{filtro_sql}")
+
+    st.divider()
+
+    #CASO DE USO 6
+    st.subheader("Tendência Temporal: Volume vs. Exploração Real")
+    q_trend = f"""
+        SELECT 
+            EXTRACT(YEAR FROM published_date) as ano,
+            COUNT(id) as total_cves,
+            COUNT(CASE WHEN cvss_base_severity = 'CRITICAL' THEN 1 END) as criticas,
+            (SELECT COUNT(*) FROM kev k JOIN cves ON k.cve_id = cves.id WHERE EXTRACT(YEAR FROM cves.published_date) = EXTRACT(YEAR FROM cves.published_date)) as exploradas_kev
+        FROM cves
+        WHERE {filtro_sql}
+        GROUP BY 1 ORDER BY 1
+    """
+    df_trend = get_data(q_trend)
+    fig_trend = px.line(df_trend, x='ano', y=['total_cves', 'exploradas_kev'], 
+                        labels={'value': 'Quantidade', 'ano': 'Ano de Publicação'},
+                        title="Crescimento de Vulnerabilidades vs. Inclusões no KEV")
+    st.plotly_chart(fig_trend, width='stretch', key=f"trend_{filtro_sql}")
+
+    st.divider()
+
+    #CASO DE USO 7
+    st.subheader("🏆 Fabricantes com Maior Risco Acumulado (EPSS)")
+    q_vendor_risk = f"""
+        SELECT k.vendor_project as fabricante, SUM(e.epss_score) as risco_acumulado
+        FROM kev k
+        JOIN epss_scores e ON k.cve_id = e.cve_id
+        JOIN cves c ON k.cve_id = c.id
+        WHERE {filtro_sql_alias}
+        GROUP BY 1 ORDER BY 2 DESC LIMIT 10
+    """
+    df_v_risk = get_data(q_vendor_risk)
+    fig_v_risk = px.bar(df_v_risk, x='risco_acumulado', y='fabricante', orientation='h',
+                        title="Top 10 Vendors por Soma de Probabilidade de Exploração (EPSS)")
+    st.plotly_chart(fig_v_risk, width='stretch', key=f"v_risk_{filtro_sql}")
