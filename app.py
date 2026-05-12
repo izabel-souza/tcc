@@ -32,6 +32,29 @@ def get_data(query):
         return pd.read_sql(text(query), conn)
 
 
+def render_ransomware_icon(percentual):
+    # Definindo a cor de preenchimento baseada na paleta (CRITICAL #EF4444)
+    fill_color = "#EF4444"
+    background_icon = "#374151" # Cinza escuro para a parte não preenchida
+    
+    st.markdown(f"""
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #1F2937; padding: 25px; border-radius: 15px; border: 1px solid #374151;">
+        <div style="position: relative; width: 120px; height: 120px;">
+            <svg viewBox="0 0 24 24" fill="{background_icon}" style="width: 100%; height: 100%; position: absolute;">
+                <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12zm-9-9c-1.66 0-3 1.34-3 3v2H8v6h8v-6h-1v-2c0-1.66-1.34-3-3-3zm1 5h-2v-2c0-.55.45-1 1-1s1 .45 1 1v2z"/>
+            </svg>
+            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: {percentual}%; overflow: hidden; transition: height 1s ease-in-out;">
+                <svg viewBox="0 0 24 24" fill="{fill_color}" style="width: 120px; height: 120px; position: absolute; bottom: 0;">
+                    <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12zm-9-9c-1.66 0-3 1.34-3 3v2H8v6h8v-6h-1v-2c0-1.66-1.34-3-3-3zm1 5h-2v-2c0-.55.45-1 1-1s1 .45 1 1v2z"/>
+                </svg>
+            </div>
+        </div>
+        <div style="margin-top: 15px; font-size: 28px; font-weight: bold; color: #F9FAFB;">{percentual:.1f}%</div>
+        <div style="color: #9CA3AF; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Presença de Ransomware</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 # --- CABEÇALHO ---
 st.title("Dashboard de Ameaças e Vulnerabilidades")
 st.markdown(
@@ -179,25 +202,28 @@ with tab1:
 with tab2:
     st.header("Análise de Risco Prático (KEV & EPSS)")
 
-    # Gráfico de Rosca Ransomware
-    ransom_query = f"""
-        SELECT CASE WHEN k.known_ransomware_usage THEN 'Com Ransomware' ELSE 'Sem Ransomware' END as status, COUNT(k.cve_id) as qtd
-        FROM kev k JOIN cves c ON k.cve_id = c.id
-        WHERE {filtro_sql_alias} GROUP BY 1
+    # Query para obter apenas a porcentagem de CVEs com Ransomware no período
+    st.subheader("Fator Ransomware (Subset KEV)")
+    
+    # Busca o percentual consolidado
+    query_ransom_pct = f"""
+        SELECT 
+            (COUNT(CASE WHEN k.known_ransomware_usage THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) as porcentagem
+        FROM kev k 
+        JOIN cves c ON k.cve_id = c.id
+        WHERE {filtro_sql_alias}
     """
-    df_ransom = get_data(ransom_query)
-    fig_ran = px.pie(df_ransom,
-                     values='qtd',
-                     names='status',
-                     hole=0.5,
-                     color='status',
-                     color_discrete_map={
-                         'Com Ransomware': '#8b0000',
-                         'Sem Ransomware': '#1f77b4'
-                     })
-    st.plotly_chart(fig_ran, width='stretch', key=f"ran_{filtro_sql}")
+    df_ransom_pct = get_data(query_ransom_pct)
+    valor_ransomware = df_ransom_pct['porcentagem'].iloc[0] if not df_ransom_pct.empty else 0
+
+    # Renderiza o ícone
+    render_ransomware_icon(valor_ransomware)
+    
+    st.divider()
 
     col_k1, col_k2 = st.columns(2)
+
+    #Grafico de Top Vendors (empresas)
     with col_k1:
         st.subheader("Top Vendors (Explorados)")
         vendor_q = f"SELECT k.vendor_project, COUNT(k.cve_id) as qtd FROM kev k JOIN cves c ON k.cve_id = c.id WHERE {filtro_sql_alias} GROUP BY 1 ORDER BY 2 DESC LIMIT 10"
@@ -476,7 +502,7 @@ with tab2:
 
         st.divider()
 
-        # Gráfico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
+    # Gráfico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
         st.write("### Evolução da Probabilidade Média de Exploração (EPSS)")
         fig_epss_trend = px.area(
             df_tendencia,
@@ -894,3 +920,5 @@ with tab4:
         st.plotly_chart(fig_tac_kev,
                         width='stretch',
                         key=f"mitre_kev_{filtro_sql}")
+        
+
