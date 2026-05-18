@@ -1,6 +1,7 @@
 # --- IMPORTS ---
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 from src.utils.database import get_data
 
 #FUNCAO COM OS GRAFICOS
@@ -13,7 +14,7 @@ def render_mitre_tab(filtro_sql):
 
     c1, c2 = st.columns([1, 1])
 
-    # Grafico Top 10 Tecnicas
+ # Grafico Top 10 Tecnicas
     with c1:
         with st.container(border=True):
 
@@ -41,7 +42,7 @@ def render_mitre_tab(filtro_sql):
                     y='tecnica',
                     orientation='h',
                     labels={
-                        'quantidade': 'Quantidade de Vulnerabilidades',
+                        'quantidade': 'Quantidade',
                         'tecnica': 'Técnica MITRE'
                     },
                     color='quantidade',
@@ -55,6 +56,8 @@ def render_mitre_tab(filtro_sql):
                 )
 
                 st.plotly_chart(fig_tech, width='stretch', key=f"tech_{filtro_sql}")
+            else:
+                st.info("Nenhuma técnica mapeada para este filtro.")
 
 
     # Grafico Top 10 taticas
@@ -87,124 +90,172 @@ def render_mitre_tab(filtro_sql):
                     y='tatica',
                     orientation='h',
                     labels={
-                        'quantidade': 'Quantidade de Vulnerabilidades',
+                        'quantidade': 'Quantidade',
                         'tatica': 'Tática MITRE (Objetivo)'
                     },
                     color='quantidade',
                     color_continuous_scale='Blues'
                 )
 
-            fig_taticas.update_layout(
-                yaxis={'categoryorder': 'total ascending'},
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
+                fig_taticas.update_layout(
+                    yaxis={'categoryorder': 'total ascending'},
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)'
+                )
 
-            st.plotly_chart(fig_taticas, width='stretch', key=f"tac_{filtro_sql}")
+                st.plotly_chart(fig_taticas, width='stretch', key=f"tac_{filtro_sql}")
+            else:
+                st.info("Nenhuma técnica mapeada para este filtro.")
 
     st.divider()
 
+    # TREEMAP QUE MOSTRA A RELACAO ENTRE AS TOP 5 TECNICAS E SUAS FRAQUEZAS
     with st.container(border=True): 
-        st.subheader("Mapeamento Detalhado (Top 5 Técnicas ➔ CWEs)")
-
-        query_tree = """
+        st.subheader("Mapeamento Detalhado: Relação Técnica ➔ Fraqueza (CWE)")
+        
+        query_tree = f"""
             WITH TopTechniques AS (
-                -- Descobre quais são os 5 IDs de técnicas mais comuns
                 SELECT t.id
-                FROM cwe_mitre_mapping cmm
-                JOIN mitre_techniques t ON (t.id = cmm.mitre_id OR t.id = 'T' || cmm.mitre_id)
+                FROM mitre_techniques t
+                JOIN cwe_mitre_mapping cmm ON (t.id = cmm.mitre_id OR t.id = 'T' || cmm.mitre_id)
                 JOIN cve_cwe_mapping ccm ON cmm.cwe_id = ccm.cwe_id
+                JOIN cves c ON ccm.cve_id = c.id
+                WHERE {filtro_sql}
                 GROUP BY t.id
-                ORDER BY COUNT(DISTINCT ccm.cve_id) DESC
+                ORDER BY COUNT(DISTINCT c.id) DESC
                 LIMIT 5
             )
             SELECT 
                 t.name AS tecnica,
                 cw.id || ' - ' || SUBSTRING(cw.description, 1, 30) || '...' AS fraqueza,
-                COUNT(DISTINCT ccm.cve_id) AS qtd_cves
-            FROM cwe_mitre_mapping cmm
-            JOIN mitre_techniques t ON (t.id = cmm.mitre_id OR t.id = 'T' || cmm.mitre_id)
-            JOIN cve_cwe_mapping ccm ON cmm.cwe_id = ccm.cwe_id
+                COUNT(DISTINCT c.id) AS qtd_cves
+            FROM cves c
+            JOIN cve_cwe_mapping ccm ON c.id = ccm.cve_id
             JOIN cwes cw ON ccm.cwe_id = cw.id
-            WHERE t.id IN (SELECT id FROM TopTechniques)
-            GROUP BY t.name, fraqueza
+            JOIN cwe_mitre_mapping cmm ON cw.id = cmm.cwe_id
+            JOIN mitre_techniques t ON (t.id = cmm.mitre_id OR t.id = 'T' || cmm.mitre_id)
+            WHERE t.id IN (SELECT id FROM TopTechniques) AND {filtro_sql}
+            GROUP BY 1, 2
+            ORDER BY 3 DESC
         """
-
+        
         df_tree = get_data(query_tree)
 
         if not df_tree.empty:
             fig_tree = px.treemap(
-                df_tree,
-                path=['tecnica', 'fraqueza'],
-                labels={'qtd_cves': 'Quantidade'},
+                df_tree, 
+                path=['tecnica', 'fraqueza'], 
                 values='qtd_cves',
+                template="plotly_dark",
                 color='qtd_cves',
-                color_continuous_scale='Reds'
+                color_continuous_scale='Reds',
+                labels={'qtd_cves': 'Total de CVEs', 'tecnica': 'Técnica', 'fraqueza': 'Fraqueza (CWE)'}
             )
-
             fig_tree.update_layout(
-                margin=dict(t=20, l=0, r=0, b=0),
-                legend_itemclick="toggleothers", 
-                legend_itemdoubleclick="toggle"
+                margin=dict(t=30, l=10, r=10, b=10),
+                paper_bgcolor='rgba(0,0,0,0)'
             )
-
-            st.plotly_chart(fig_tree, width='stretch')
+            st.plotly_chart(fig_tree, width='stretch', key=f"tree_{filtro_sql}")
+        else:
+            st.info("Dados insuficientes para o mapeamento detalhado com os filtros atuais.")
 
     st.divider()
 
     # ==============================================================================
     # CASO DE USO 3: RELAÇÃO ENTRE FRAQUEZAS (CWE) E TÁTICAS DE ATAQUE (MITRE)
     # ==============================================================================
-    st.subheader("Defesa Baseada em Ameaças: Do Erro ao Comportamento")
-    st.markdown("""
-    Esta análise conecta a causa raiz técnica (CWE) ao objetivo tático do adversário. 
-    Permite entender quais falhas de software facilitam comportamentos específicos de ataque.
-    """)
+    with st.container(border=True):
 
-    # 1. Visualização de Fluxo Hierárquico: Tática ➔ Técnica ➔ CWE
-    st.write("### Fluxo de Exploração: Tática, Técnica e Fraqueza")
+        st.subheader("Defesa Baseada em Ameaças: Do Erro ao Comportamento")
+        st.markdown("""
+        Esta análise conecta a causa raiz técnica (CWE) ao objetivo tático do adversário. 
+        Permite entender quais falhas de software facilitam comportamentos específicos de ataque.
+        """)
+        
+        st.subheader("Fluxograma de Exploração (CWE ➔ Técnica ➔ Tática)")
 
-    q_fluxo_mitre = f"""
-        SELECT 
-            tac.name AS nome_tatica,
-            tec.name AS nome_tecnica,
-            cw.id AS identificador_fraqueza,
-            COUNT(DISTINCT c.id) AS quantidade_vulnerabilidades
-        FROM mitre_tactics tac
-        JOIN mitre_tactic_technique mtt ON tac.id = mtt.tactic_id
-        JOIN mitre_techniques tec ON mtt.technique_id = tec.id
-        JOIN cwe_mitre_mapping cmm ON (tec.id = cmm.mitre_id OR tec.id = 'T' || cmm.mitre_id)
-        JOIN cwes cw ON cmm.cwe_id = cw.id
-        JOIN cve_cwe_mapping ccm ON cw.id = ccm.cwe_id
-        JOIN cves c ON ccm.cve_id = c.id
-        WHERE {filtro_sql}
-        GROUP BY 1, 2, 3
-        ORDER BY quantidade_vulnerabilidades DESC
-        LIMIT 20
-    """
+        query_sankey = f"""
+            SELECT 
+                cw.id AS origem,
+                tec.name AS intermediario,
+                tac.name AS destino,
+                COUNT(DISTINCT c.id) AS qtd
+            FROM mitre_tactics tac
+            JOIN mitre_tactic_technique mtt ON tac.id = mtt.tactic_id
+            JOIN mitre_techniques tec ON mtt.technique_id = tec.id
+            JOIN cwe_mitre_mapping cmm ON (tec.id = cmm.mitre_id OR tec.id = 'T' || cmm.mitre_id)
+            JOIN cwes cw ON cmm.cwe_id = cw.id
+            JOIN cve_cwe_mapping ccm ON cw.id = ccm.cwe_id
+            JOIN cves c ON ccm.cve_id = c.id
+            WHERE {filtro_sql}
+            GROUP BY 1, 2, 3
+            ORDER BY qtd DESC
+            LIMIT 50
+        """
 
-    df_fluxo = get_data(q_fluxo_mitre)
+        df_s = get_data(query_sankey)
 
-    if not df_fluxo.empty:
-        # elo solicitado (Tática -> Técnica -> CWE)
-        fig_sunburst = px.sunburst(
-            df_fluxo,
-            path=['nome_tatica', 'nome_tecnica', 'identificador_fraqueza'],
-            values='quantidade_vulnerabilidades',
-            title="Hierarquia de Ataque: Tática ➔ Técnica ➔ Fraqueza Associada",
-            color='quantidade_vulnerabilidades',
-            color_continuous_scale='OrRd',
-            labels={
-                'nome_tatica': 'Tática (Objetivo)',
-                'nome_tecnica': 'Técnica (Método)',
-                'identificador_fraqueza': 'Fraqueza (CWE)',
-                'quantidade_vulnerabilidades': 'Total de Vulnerabilidades'
-            })
-        st.plotly_chart(fig_sunburst,
-                        width='stretch',
-                        key=f"sunburst_mitre_{filtro_sql}")
-    else:
-        st.info("Dados insuficientes para gerar a visualização hierárquica.")
+        if not df_s.empty:
+            # Criando listas únicas de nós para mapeamento de índices
+            nodes = list(set(df_s['origem']) | set(df_s['intermediario']) | set(df_s['destino']))
+            node_map = {name: i for i, name in enumerate(nodes)}
+
+            # Construindo as conexões (Links)
+            # Link 1: CWE -> Técnica
+            sources = [node_map[row['origem']] for _, row in df_s.iterrows()]
+            targets = [node_map[row['intermediario']] for _, row in df_s.iterrows()]
+            values = df_s['qtd'].tolist()
+
+            # Link 2: Técnica -> Tática
+            sources.extend([node_map[row['intermediario']] for _, row in df_s.iterrows()])
+            targets.extend([node_map[row['destino']] for _, row in df_s.iterrows()])
+            values.extend(df_s['qtd'].tolist())
+
+            # Cores baseadas na sua paleta: Azul para Técnicas, Vermelho para Táticas
+            node_colors = []
+            for node in nodes:
+                if node in df_s['origem'].values: node_colors.append("#EAB308") # Amarelo (CWE)
+                elif node in df_s['intermediario'].values: node_colors.append("#3B82F6") # Azul (Técnica)
+                else: node_colors.append("#EF4444") # Vermelho (Tática)
+
+            fig_sankey = go.Figure(data=[go.Sankey(
+                node=dict(
+                    pad=15, thickness=20, line=dict(color="black", width=0.5),
+                    label=nodes, color=node_colors
+                ),
+                link=dict(
+                    source=sources, target=targets, value=values,
+                    color="rgba(255, 255, 255, 0.1)" # Links sutis e transparentes
+                )
+            )])
+
+            fig_sankey.update_layout(
+                title_text="Fluxo de Disseminação de Vulnerabilidades",
+                font_size=12, template="plotly_dark",
+                paper_bgcolor='rgba(0,0,0,0)',
+                height=600
+            )
+
+            st.plotly_chart(fig_sankey, width='stretch')
+
+        with st.expander("Guia de Análise:"):
+            st.markdown("""
+                ### Objetivo: Visualizar a Ponte entre Erro e Comportamento
+                Este diagrama de **Sankey** revela como uma falha técnica no código se transforma em uma capacidade de ataque para o adversário. O fluxo segue a lógica: **Onde o erro nasce ➔ Como ele é usado ➔ O que o atacante quer.**
+
+                #### Como ler o fluxo (Da esquerda para a direita):
+                1.  **CWE (Amarelo - Origem):** Representa a fraqueza de software (ex: Estouro de Buffer). É a causa raiz técnica.
+                2.  **Técnica (Azul - Meio):** Representa o método do **MITRE ATT&CK** utilizado para explorar aquela fraqueza (ex: Execução de API).
+                3.  **Tática (Vermelho - Destino):** Representa o objetivo final do atacante (ex: Persistência ou Exfiltração de Dados).
+
+                #### O que observar:
+                * **Espessura das Barras:** Quanto mais larga a conexão, maior é o volume de vulnerabilidades que seguem aquele caminho específico.
+                * **Convergência:** Observe como diferentes tipos de erros de programação (CWEs) podem convergir para uma mesma técnica de ataque, mostrando a "versatilidade" de certas ferramentas dos invasores.
+
+                #### Valor para a Defesa:
+                Este gráfico sustenta o conceito de **Threat-Informed Defense**. Ao entender qual tática é mais alimentada por certas fraquezas, a organização pode priorizar correções de código que "cortam o fluxo" de múltiplos comportamentos de ataque simultaneamente.
+            """)
+
 
     st.divider()
 
@@ -214,7 +265,7 @@ def render_mitre_tab(filtro_sql):
     with col_m1:
         with st.container(border=True):
 
-            st.write("### Técnicas Associadas a Falhas Críticas")
+            st.write("### Top 10 Técnicas Associadas a Falhas Críticas")
 
             q_tech_crit = f"""
                 SELECT 
@@ -255,7 +306,7 @@ def render_mitre_tab(filtro_sql):
     with col_m2:
         with st.container(border=True):
 
-            st.write("### Táticas Associadas a Fraquezas Exploradas")
+            st.write("### Top 10 Táticas Associadas a Fraquezas Exploradas")
             q_tac_kev = f"""
                 SELECT 
                     tac.name AS nome_tatica,

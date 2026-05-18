@@ -4,11 +4,12 @@ from src.tabs.vision import render_vision_tab
 from src.tabs.kev_epss import render_risk_tab
 from src.tabs.cwe import render_cwe_tab
 from src.tabs.mitre import render_mitre_tab
+from src.tabs.about import render_about_tab
 
 # --- CONFIGURAÇÕES DA PÁGINA ---
 st.set_page_config(
     page_title="Dashboard de Ameaças e Vulnerabilidades",
-    page_icon="🛡️",
+    page_icon="🪲",
     layout="wide"
 )
 
@@ -36,7 +37,7 @@ st.markdown("""
 # ==========================================
 # BARRA LATERAL (FILTROS)
 # ==========================================
-st.sidebar.header("Filtros Globais")
+st.sidebar.header("Filtros")
 
 #Filtro de Ano - Range Slider
 ano_min, ano_max = 2015, 2026
@@ -46,6 +47,13 @@ periodo = st.sidebar.slider(
     max_value=ano_max,
     value=(ano_min, ano_max),
     help="Arraste para selecionar o intervalo de anos.")
+
+#Filtro de CVE
+busca_cve = st.sidebar.text_input(
+    "Buscar CVE por ID", 
+    placeholder="Ex: CVE-2024-1234",
+    help="Digite o ID completo ou parcial para filtrar."
+)
 
 #Filtro de Severidade (CVSS)
 opcoes_severidade = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
@@ -71,21 +79,33 @@ else:
     condicao_sev = "1=1"
     condicao_sev_alias = "1=1"
 
-filtro_sql = f"{condicao_ano} AND {condicao_sev}"
-filtro_sql_alias = f"{condicao_ano_alias} AND {condicao_sev_alias}"
+if busca_cve:
+    condicao_busca = f"id ILIKE '%{busca_cve}%'"
+    condicao_busca_alias = f"c.id ILIKE '%{busca_cve}%'"
+else:
+    condicao_busca = "1=1"
+    condicao_busca_alias = "1=1"
 
-tab1, tab2, tab3, tab4 = st.tabs([
-    "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"
+filtro_sql = f"({condicao_ano}) AND ({condicao_sev}) AND ({condicao_busca})"
+filtro_sql_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias}) AND ({condicao_busca_alias})"
+filtro_estatistico_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias})"
+
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"
 ])
 
 with tab1:
-    render_vision_tab(filtro_sql, condicao_ano, severidades_selecionadas)
+    render_about_tab()
 
 with tab2:
-    render_risk_tab(filtro_sql_alias)
+    render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas)
 
 with tab3:
-    render_cwe_tab(filtro_sql_alias)
+    render_risk_tab(filtro_sql_alias, filtro_estatistico_alias)
 
 with tab4:
-    render_mitre_tab(filtro_sql_alias)
+    render_cwe_tab(filtro_estatistico_alias)
+
+with tab5:
+    render_mitre_tab(filtro_estatistico_alias)

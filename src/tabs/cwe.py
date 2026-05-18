@@ -177,3 +177,18 @@ def render_cwe_tab(filtro_sql):
             )
 
             st.plotly_chart(fig_cwe_final, width='stretch', key=f"cwe_analise_{opcao_analise}_{filtro_sql}")
+
+        with st.expander("Guia de Análise:"):
+            st.markdown("""
+                ### Objetivo: Identificar as Falhas de Programação mais Perigosas
+                Este caso de uso investiga quais tipos de erros de desenvolvimento (**CWE**) estão por trás das vulnerabilidades mais exploradas no mundo real.
+
+                #### Como interpretar as 4 Perspectivas:
+                1.  **Volume Total:** Mostra quais falhas são mais comuns na base geral (ex: falhas de permissão ou gestão de memória).
+                2.  **Vulnerabilidades Críticas:** Filtra as falhas que geram os maiores impactos teóricos (CVSS > 9.0).
+                3.  **Exploração Ativa (KEV):** Esta é a visão mais importante para defesa. Revela quais erros de programação os atacantes **realmente conseguem explorar** hoje.
+                4.  **Maior Média EPSS:** Identifica classes de falhas que, estatisticamente, têm maior chance de virarem um problema no futuro próximo.
+
+                #### Valor:
+                Esta análise conecta a **Segurança de Aplicações (AppSec)** com a **Inteligência de Ameaças**. Ela permite provar que certas classes de fraqueza (como *Injection* ou *Broken Access Control*) concentram muito mais risco prático do que outras, mesmo que não sejam as mais numerosas no total.
+            """)
