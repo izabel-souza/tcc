@@ -91,21 +91,34 @@ filtro_sql_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias}) AND ({con
 filtro_estatistico_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias})"
 
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"
-])
+# NOME DAS PAGINAS/ABAS
+titulos_paginas = ["Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"]
 
-with tab1:
+st.sidebar.divider()
+
+# NAVEGACAO
+st.sidebar.header("Navegação:")
+
+# CRIA RADIO PARA NAVEGACAO
+pagina_selecionada = st.sidebar.radio(
+    label="Menu de Navegação",
+    options=titulos_paginas, 
+    key="pagina_ativa",
+    label_visibility="collapsed" 
+)
+
+# RENDERIZA AS ABAS DE ACORDO COM A VARIAVEL SELECIONADA
+if pagina_selecionada == "Sobre":
     render_about_tab()
 
-with tab2:
+elif pagina_selecionada == "Visão Geral":
     render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas)
 
-with tab3:
+elif pagina_selecionada == "Risco e Exploração":
     render_risk_tab(filtro_sql_alias, filtro_estatistico_alias)
 
-with tab4:
+elif pagina_selecionada == "Raiz do Problema":
     render_cwe_tab(filtro_estatistico_alias)
 
-with tab5:
+elif pagina_selecionada == "Padrões de Ataque":  
     render_mitre_tab(filtro_estatistico_alias)

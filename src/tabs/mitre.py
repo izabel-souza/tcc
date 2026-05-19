@@ -238,7 +238,7 @@ def render_mitre_tab(filtro_sql):
 
             st.plotly_chart(fig_sankey, width='stretch')
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de Análise: "):
             st.markdown("""
                 ### Objetivo: Visualizar a Ponte entre Erro e Comportamento
                 Este diagrama de **Sankey** revela como uma falha técnica no código se transforma em uma capacidade de ataque para o adversário. O fluxo segue a lógica: **Onde o erro nasce ➔ Como ele é usado ➔ O que o atacante quer.**
