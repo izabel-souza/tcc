@@ -6,7 +6,7 @@ from src.utils.components import render_kpi_card
 
 #FUNCAO COM OS GRAFICOS
 def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas):
-    st.header("Métricas Globais de Vulnerabilidades")
+    st.subheader("Métricas Globais de Vulnerabilidades")
 
     # QUERY DOS KPIs
     kpi_query = f"""
@@ -50,10 +50,12 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
             timeline_query = f"""
                 SELECT 
                     TO_CHAR(published_date, 'YYYY-MM') as mes_ano, 
-                    cvss_base_severity, COUNT(id) as qtd
+                    cvss_base_severity, 
+                    COUNT(id) as qtd
                 FROM cves 
                 WHERE {filtro_sql} AND cvss_base_severity IS NOT NULL
-                GROUP BY 1, 2 ORDER BY 1
+                GROUP BY 1, 2 
+                ORDER BY 1
             """
 
             df_timeline = get_data(timeline_query)
@@ -63,11 +65,19 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
                 x='mes_ano', 
                 y='qtd', 
                 color='cvss_base_severity', 
-                labels={"qtd": "Quantidade de CVEs", "mes_ano": "Mês/Ano de Publicação", 'cvss_base_severity': 'Severidade CVSS'},
-                color_discrete_map={'CRITICAL': 'darkred', 'HIGH': 'red', 'MEDIUM': 'orange', 'LOW': 'yellow'}
+                labels={
+                    "qtd": "Quantidade de CVEs", 
+                    "mes_ano": "Mês/Ano de Publicação", 
+                    'cvss_base_severity': 'Severidade CVSS'
+                },
+                color_discrete_map={
+                    'CRITICAL': 'darkred', 
+                    'HIGH': 'red', 
+                    'MEDIUM': 'orange', 
+                    'LOW': 'yellow'
+                }
             )
             
-            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_bar.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
                 plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
@@ -80,7 +90,7 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
     # GRAFICO DE PIZZA COM O PORCENTUAL DE CVEs SEPARADOS POR SEVERIDADE
     with c2:
         with st.container(border=True):
-            st.subheader("Distribuição por Severidade (% Global)")
+            st.subheader("Distribuição Global por Severidade")
 
             query_base = f"""
                 SELECT 

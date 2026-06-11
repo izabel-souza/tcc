@@ -7,7 +7,7 @@ from src.utils.database import get_data
 #FUNCAO COM OS GRAFICOS
 def render_mitre_tab(filtro_sql):
 
-    st.header("Inteligência de Ameaças: MITRE ATT&CK")
+    st.subheader("Inteligência de Ameaças: MITRE ATT&CK")
     st.markdown(
         "Cruzamento das vulnerabilidades com as Técnicas do MITRE mais prováveis de serem utilizadas pelos atacantes."
     )
@@ -241,7 +241,7 @@ def render_mitre_tab(filtro_sql):
         with st.expander("Guia de Análise: "):
             st.markdown("""
                 ### Objetivo: Visualizar a Ponte entre Erro e Comportamento
-                Este diagrama de **Sankey** revela como uma falha técnica no código se transforma em uma capacidade de ataque para o adversário. O fluxo segue a lógica: **Onde o erro nasce ➔ Como ele é usado ➔ O que o atacante quer.**
+                Este diagrama de Sankey revela como uma falha técnica no código se transforma em uma capacidade de ataque para o adversário. O fluxo segue a lógica: **Onde o erro nasce ➔ Como ele é usado ➔ O que o atacante quer.**
 
                 #### Como ler o fluxo (Da esquerda para a direita):
                 1.  **CWE (Amarelo - Origem):** Representa a fraqueza de software (ex: Estouro de Buffer). É a causa raiz técnica.
@@ -252,7 +252,7 @@ def render_mitre_tab(filtro_sql):
                 * **Espessura das Barras:** Quanto mais larga a conexão, maior é o volume de vulnerabilidades que seguem aquele caminho específico.
                 * **Convergência:** Observe como diferentes tipos de erros de programação (CWEs) podem convergir para uma mesma técnica de ataque, mostrando a "versatilidade" de certas ferramentas dos invasores.
 
-                #### Valor para a Defesa:
+                #### A conclusão prática:
                 Este gráfico sustenta o conceito de **Threat-Informed Defense**. Ao entender qual tática é mais alimentada por certas fraquezas, a organização pode priorizar correções de código que "cortam o fluxo" de múltiplos comportamentos de ataque simultaneamente.
             """)
 

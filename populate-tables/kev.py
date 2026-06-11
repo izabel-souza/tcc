@@ -39,11 +39,8 @@ def insert_kev_data(conn, item):
     try:
         vendor_project = item.get("vendorProject")
         product = item.get("product")
-        vulnerability_name = item.get("vulnerabilityName")
         date_added_str = item.get("dateAdded")
         date_added = datetime.strptime(date_added_str, "%Y-%m-%d").date()
-        short_description = item.get("shortDescription")
-        required_action = item.get("requiredAction")
         due_date_str = item.get("dueDate")
         due_date = None
         if due_date_str:
@@ -58,8 +55,8 @@ def insert_kev_data(conn, item):
         #query de INSERT
         sql = """
             INSERT INTO kev (
-                cve_id, vendor_project, product, vulnerability_name, 
-                date_added, short_description, required_action, 
+                cve_id, vendor_project, product,
+                date_added,  
                 due_date, known_ransomware_usage
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (cve_id) DO UPDATE SET
@@ -69,8 +66,8 @@ def insert_kev_data(conn, item):
         """
 
         cursor.execute(sql, (
-            cve_id, vendor_project, product, vulnerability_name,
-            date_added, short_description, required_action,
+            cve_id, vendor_project, product,
+            date_added,
             due_date, known_ransomware
         ))
         

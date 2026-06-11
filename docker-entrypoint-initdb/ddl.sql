@@ -2,33 +2,11 @@
 CREATE TABLE cves (
     id VARCHAR(50) PRIMARY KEY,
     published_date TIMESTAMP,
-    last_modified_date TIMESTAMP, 
-    vuln_status VARCHAR(50), 
-    cve_tags TEXT[],
-    description TEXT,                        
+    last_modified_date TIMESTAMP,                      
 
-    -- metricas CVSS
-    cvss_metric_type VARCHAR(20), 
-    cvss_version VARCHAR(10),        
-    cvss_vector_string VARCHAR(100),      
+    -- metricas CVSS  
     cvss_base_score DECIMAL(4,1),           
-    cvss_base_severity VARCHAR(20),        
-    
-    -- vetores de ataque
-    cvss_attack_vector VARCHAR(50),       
-    cvss_attack_complexity VARCHAR(50),     
-    cvss_privileges_required VARCHAR(50),    
-    cvss_user_interaction VARCHAR(50),       
-    cvss_scope VARCHAR(50),                  
-    
-    -- impactos
-    cvss_confidentiality_impact VARCHAR(20), 
-    cvss_integrity_impact VARCHAR(20),      
-    cvss_availability_impact VARCHAR(20),    
-    
-    -- scores adicionais 
-    cvss_exploitability_score DECIMAL(4,1), 
-    cvss_impact_score DECIMAL(4,1)       
+    cvss_base_severity VARCHAR(20)                    
 );
 
 -- KEV
@@ -36,10 +14,7 @@ CREATE TABLE kev (
     cve_id VARCHAR(50) PRIMARY KEY,
     vendor_project VARCHAR(255),
     product VARCHAR(255),
-    vulnerability_name VARCHAR(255),
     date_added DATE,
-    short_description TEXT,
-    required_action TEXT,
     due_date DATE,
     known_ransomware_usage BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (cve_id) REFERENCES cves(id)
@@ -49,7 +24,6 @@ CREATE TABLE kev (
 CREATE TABLE epss_scores (
     cve_id VARCHAR(50) PRIMARY KEY,
     epss_score DECIMAL(6,5),
-    percentile DECIMAL(6,5),
     FOREIGN KEY (cve_id) REFERENCES cves(id)
 );
 
@@ -72,16 +46,14 @@ CREATE TABLE cve_cwe_mapping (
 CREATE TABLE mitre_tactics (
     id VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255),
-    description TEXT,
-    url VARCHAR(255)
+    description TEXT
 );
 
 -- MITRE ATT&CK: tecnicas
 CREATE TABLE mitre_techniques (
     id VARCHAR(20) PRIMARY KEY, 
     name VARCHAR(255),
-    description TEXT,
-    url VARCHAR(255)
+    description TEXT
 );
 
 -- CAPEC 

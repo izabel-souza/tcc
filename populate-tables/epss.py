@@ -49,17 +49,16 @@ def insert_epss_scores(conn, data_list):
         for item in data_list:
             cve_id = item.get("cve")
             epss_score = item.get("epss")
-            percentile = item.get("percentile")
 
             #query de INSERT
             sql = """
-                INSERT INTO epss_scores (cve_id, epss_score, percentile)
+                INSERT INTO epss_scores (cve_id, epss_score)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (cve_id) DO UPDATE SET
                     epss_score = EXCLUDED.epss_score,
                     percentile = EXCLUDED.percentile;
             """
-            cursor.execute(sql, (cve_id, epss_score, percentile))
+            cursor.execute(sql, (cve_id, epss_score))
         
         conn.commit()
     except Exception as e:

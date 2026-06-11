@@ -8,18 +8,32 @@ from src.tabs.about import render_about_tab
 
 # --- CONFIGURAÇÕES DA PÁGINA ---
 st.set_page_config(
-    page_title="Dashboard de Ameaças e Vulnerabilidades",
+    page_title="Cyber Threat Intelligence Dashboard",
     page_icon="🪲",
     layout="wide"
 )
 
 # --- TITULO E SUBTITULO DA PÁGINA ---
-st.title("Dashboard de Ameaças e Vulnerabilidades")
-st.markdown("Análise de Vulnerabilidades, Risco de Exploração e Táticas MITRE ATT&CK")
+st.markdown(
+    """
+    <h1 style="text-align: center; margin-top: 0;">
+        Cyber Threat Intelligence Dashboard
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
+st.markdown(
+    """
+    <h2 style="text-align: center; margin-top: 0; margin-bottom: 50px;">
+        Integração entre NVD/CVE, EPSS, KEV, CWE e MITRE ATT&CK
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown("""
     <style>
-    /* Estiliza o container com borda para parecer um card */
+    /* estilizacao do container com borda para kpi parecer um card */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #1F2937 !important;
         border: 1px solid #374151 !important;

@@ -69,12 +69,10 @@ def fetch_and_load_mitre():
             # O MITRE guarda o ID real dentro de uma lista de referências externas
             external_refs = obj.get("external_references", [])
             mitre_id = None
-            url = None
             
             for ref in external_refs:
                 if ref.get("source_name") == "mitre-attack":
                     mitre_id = ref.get("external_id")
-                    url = ref.get("url")
                     break
             
             # nao adiciona se nao tem id
@@ -87,27 +85,25 @@ def fetch_and_load_mitre():
             # insert das taticas
             if obj_type == "x-mitre-tactic":
                 sql = """
-                    INSERT INTO mitre_tactics (id, name, description, url)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO mitre_tactics (id, name, description)
+                    VALUES (%s, %s, %s)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
-                        description = EXCLUDED.description,
-                        url = EXCLUDED.url;
+                        description = EXCLUDED.description;
                 """
-                cursor.execute(sql, (mitre_id, name, description, url))
+                cursor.execute(sql, (mitre_id, name, description))
                 tactics_count += 1
 
             # insert das tecnicas e do mapeamento
             elif obj_type == "attack-pattern":
                 sql = """
-                    INSERT INTO mitre_techniques (id, name, description, url)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO mitre_techniques (id, name, description)
+                    VALUES (%s, %s, %s)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
-                        description = EXCLUDED.description,
-                        url = EXCLUDED.url;
+                        description = EXCLUDED.description;
                 """
-                cursor.execute(sql, (mitre_id, name, description, url))
+                cursor.execute(sql, (mitre_id, name, description))
                 techniques_count += 1
 
                 # Mapear qual Tática essa Técnica usa
