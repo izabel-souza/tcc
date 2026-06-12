@@ -52,6 +52,10 @@ st.markdown("""
         color: var(--vulnera-muted);
     }
 
+    .block-container {
+        padding-top: 3.3rem;
+    }
+
     .vulnera-hero {
         position: relative;
         overflow: hidden;
@@ -113,6 +117,33 @@ st.markdown("""
         font-weight: 600;
     }
 
+    .vulnera-top-nav {
+        margin: 0 0 0.9rem;
+    }
+
+    div[data-testid="stPills"] {
+        margin-bottom: 0.2rem;
+    }
+
+    div[data-testid="stPills"] div[role="radiogroup"] {
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.9rem;
+    }
+
+    div[data-testid="stPills"] button {
+        border: 1px solid rgba(56, 182, 255, 0.24);
+        background: rgba(15, 23, 42, 0.72);
+        color: var(--vulnera-muted);
+        font-weight: 700;
+    }
+
+    div[data-testid="stPills"] button[aria-checked="true"] {
+        border-color: rgba(56, 182, 255, 0.72);
+        background: rgba(56, 182, 255, 0.16);
+        color: var(--vulnera-text);
+    }
+
     .vulnera-sidebar-brand {
         margin: 0.15rem 0 1.35rem;
         text-align: center;
@@ -172,6 +203,20 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
+
+# NOME DAS PAGINAS/ABAS
+titulos_paginas = ["Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"]
+
+# --- NAVEGACAO PRINCIPAL ---
+st.markdown('<div class="vulnera-top-nav">', unsafe_allow_html=True)
+pagina_selecionada = st.pills(
+    label="Menu de Navegação",
+    options=titulos_paginas,
+    default=titulos_paginas[0],
+    key="pagina_ativa",
+    label_visibility="collapsed"
+)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- IDENTIDADE DA PLATAFORMA ---
 st.markdown(
@@ -259,22 +304,6 @@ filtro_sql = f"({condicao_ano}) AND ({condicao_sev}) AND ({condicao_busca})"
 filtro_sql_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias}) AND ({condicao_busca_alias})"
 filtro_estatistico_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias})"
 
-
-# NOME DAS PAGINAS/ABAS
-titulos_paginas = ["Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"]
-
-st.sidebar.divider()
-
-# NAVEGACAO
-st.sidebar.header("Módulos")
-
-# CRIA RADIO PARA NAVEGACAO
-pagina_selecionada = st.sidebar.radio(
-    label="Menu de Navegação",
-    options=titulos_paginas,
-    key="pagina_ativa",
-    label_visibility="collapsed"
-)
 
 # RENDERIZA AS ABAS DE ACORDO COM A VARIAVEL SELECIONADA
 if pagina_selecionada == "Sobre":
