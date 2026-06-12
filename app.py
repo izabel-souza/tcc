@@ -219,23 +219,24 @@ pagina_selecionada = st.pills(
 st.markdown('</div>', unsafe_allow_html=True)
 
 # --- IDENTIDADE DA PLATAFORMA ---
-st.markdown(
-    f"""
-    <section class="vulnera-hero">
-        <img class="vulnera-logo" src="data:image/png;base64,{LOGO_BASE64}" alt="Vulnera">
-        <p class="vulnera-subtitle">Plataforma de Inteligência e Análise de Vulnerabilidades</p>
-        <p class="vulnera-description">
-            Integração entre CVE, EPSS, KEV, CWE e MITRE ATT&CK para priorização baseada em risco.
-        </p>
-        <div class="vulnera-pill-row">
-            <span class="vulnera-pill">Múltiplas fontes públicas</span>
-            <span class="vulnera-pill">Priorização por risco</span>
-            <span class="vulnera-pill">Defesa orientada por ameaças</span>
-        </div>
-    </section>
-    """,
-    unsafe_allow_html=True
-)
+if pagina_selecionada == "Sobre":
+    st.markdown(
+        f"""
+        <section class="vulnera-hero">
+            <img class="vulnera-logo" src="data:image/png;base64,{LOGO_BASE64}" alt="Vulnera">
+            <p class="vulnera-subtitle">Plataforma de Inteligência e Análise de Vulnerabilidades</p>
+            <p class="vulnera-description">
+                Integração entre CVE, EPSS, KEV, CWE e MITRE ATT&CK para priorização baseada em risco.
+            </p>
+            <div class="vulnera-pill-row">
+                <span class="vulnera-pill">Múltiplas fontes públicas</span>
+                <span class="vulnera-pill">Priorização por risco</span>
+                <span class="vulnera-pill">Defesa orientada por ameaças</span>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ==========================================
 # BARRA LATERAL (FILTROS)
