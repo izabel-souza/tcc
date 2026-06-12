@@ -24,6 +24,7 @@ CREATE TABLE kev (
 CREATE TABLE epss_scores (
     cve_id VARCHAR(50) PRIMARY KEY,
     epss_score DECIMAL(6,5),
+    percentile DECIMAL(6,5),
     FOREIGN KEY (cve_id) REFERENCES cves(id)
 );
 

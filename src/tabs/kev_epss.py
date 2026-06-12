@@ -129,6 +129,23 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     with st.container(border=True): # envolve o gráfico no card
         st.subheader("Priorização de Correção de Vulnerabilidades")
 
+        with st.expander("Guia de Análise:"):
+            st.markdown("""
+                ### Objetivo: O risco real além da teoria.
+                        
+                A análise de ameaças não se limita à gravidade técnica da falha. Vulnerabilidades com notas altíssimas nem sempre são exploradas na prática, enquanto falhas menores podem se tornar alvos frequentes. Este gráfico cruza três dimensões para revelar o risco real:
+
+                * **Eixo X (CVSS):** A severidade técnica da vulnerabilidade.
+                * **Eixo Y (EPSS):** A probabilidade da falha ser explorada nos próximos 30 dias.
+                * **Indicador (KEV):** A confirmação de que a falha já está sendo explorada ativamente no mundo real.
+
+                #### Como classificar as ameaças:
+                1. **Prioridade Máxima:** Alta severidade técnica e alta probabilidade de exploração. Exigem correção imediata.
+                2. **Risco Subestimado:** Baixa severidade técnica, mas com alta taxa de ataques na prática.
+                3. **Atenção:** Alta severidade técnica, mas ainda sem evidências de ataques atuais. Exigem monitoramento de perto.
+                4. **Monitoramento Padrão:** Baixo impacto e baixa probabilidade. Podem seguir o fluxo normal de atualização do sistema.
+            """)
+
         #QUERY
         query_prioridade = f"""
             SELECT 
@@ -200,23 +217,6 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
             st.plotly_chart(fig_scatter, width='stretch', key=f"scatter_prioridade_{filtro_sql}")
 
-        with st.expander("Guia de Análise:"):
-            st.markdown("""
-                ### Objetivo: O risco real além da teoria.
-                        
-                A análise de ameaças não se limita à gravidade técnica da falha. Vulnerabilidades com notas altíssimas nem sempre são exploradas na prática, enquanto falhas menores podem se tornar alvos frequentes. Este gráfico cruza três dimensões para revelar o risco real:
-
-                * **Eixo X (CVSS):** A severidade técnica da vulnerabilidade.
-                * **Eixo Y (EPSS):** A probabilidade da falha ser explorada nos próximos 30 dias.
-                * **Indicador (KEV):** A confirmação de que a falha já está sendo explorada ativamente no mundo real.
-
-                #### Como classificar as ameaças:
-                1. **Prioridade Máxima:** Alta severidade técnica e alta probabilidade de exploração. Exigem correção imediata.
-                2. **Risco Subestimado:** Baixa severidade técnica, mas com alta taxa de ataques na prática.
-                3. **Atenção:** Alta severidade técnica, mas ainda sem evidências de ataques atuais. Exigem monitoramento de perto.
-                4. **Monitoramento Padrão:** Baixo impacto e baixa probabilidade. Podem seguir o fluxo normal de atualização do sistema.
-            """)
-
     st.divider()
 
     # ==============================================================================
@@ -226,6 +226,21 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
         st.subheader("Perfil das Vulnerabilidades Exploradas")
         st.write("Comparativo de Médias: Severidade Técnica vs. Probabilidade Real")
+
+        with st.expander("Guia de Análise:"):
+            st.markdown("""
+                ### Objetivo: O perfil das ameaças reais
+                Não basta saber que uma falha existe; é preciso entender o porquê os atacantes a escolhem. Esta análise divide as vulnerabilidades em dois mundos (as exploradas na prática e as teóricas) para revelar o padrão de escolha dos cibercriminosos.
+
+                #### O que observar nos comparativos:
+                1. **Severidade (CVSS):** Os atacantes só buscam as falhas mais críticas? Muitas vezes, os dados mostram que eles utilizam falhas de nota média que são mais fáceis de explorar ou que servem de "porta de entrada" para ataques maiores.
+                2. **Probabilidade (EPSS):** As falhas que já foram exploradas apresentam médias de EPSS drasticamente maiores. Isso prova visualmente que prever ataques usando probabilidade funciona muito melhor do que olhar apenas para a nota de severidade.
+                3. **Tipos de Erro (CWE):** Certos erros de programação (como injeção de código ou falhas de senha) aparecem com muito mais frequência nas ameaças reais do que no volume geral. É o método "favorito" dos invasores.
+
+                #### O que significam as cores:
+                * **Vermelho (No Catálogo KEV):** O cenário real. Ameaças concretas, confirmadas e usadas ativamente em ataques.
+                * **Azul (Restante da Base):** O cenário teórico. O grande volume de vulnerabilidades registradas que, em sua esmagadora maioria, não representam perigo prático iminente.
+            """)
 
         q_perfil_estatistico = f"""
             SELECT 
@@ -293,28 +308,24 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             )
         
             st.plotly_chart(fig_epss_comp, width='stretch', key=f"epss_perfil_{filtro_sql}")
-    
-        with st.expander("Guia de Análise:"):
-            st.markdown("""
-                ### Objetivo: O perfil das ameaças reais
-                Não basta saber que uma falha existe; é preciso entender o porquê os atacantes a escolhem. Esta análise divide as vulnerabilidades em dois mundos (as exploradas na prática e as teóricas) para revelar o padrão de escolha dos cibercriminosos.
-
-                #### O que observar nos comparativos:
-                1. **Severidade (CVSS):** Os atacantes só buscam as falhas mais críticas? Muitas vezes, os dados mostram que eles utilizam falhas de nota média que são mais fáceis de explorar ou que servem de "porta de entrada" para ataques maiores.
-                2. **Probabilidade (EPSS):** As falhas que já foram exploradas apresentam médias de EPSS drasticamente maiores. Isso prova visualmente que prever ataques usando probabilidade funciona muito melhor do que olhar apenas para a nota de severidade.
-                3. **Tipos de Erro (CWE):** Certos erros de programação (como injeção de código ou falhas de senha) aparecem com muito mais frequência nas ameaças reais do que no volume geral. É o método "favorito" dos invasores.
-
-                #### O que significam as cores:
-                * **Vermelho (No Catálogo KEV):** O cenário real. Ameaças concretas, confirmadas e usadas ativamente em ataques.
-                * **Azul (Restante da Base):** O cenário teórico. O grande volume de vulnerabilidades registradas que, em sua esmagadora maioria, não representam perigo prático iminente.
-            """)
-
 
         st.divider()
 
         # Comparação de Tipos de Fraqueza (CWE) - Top 5 de cada grupo
         st.write("### Comparativo de Fraquezas (CWE): KEV vs. Geral")
         st.write("Perfil das vulnerabilidades que efetivamente viram problema no mundo real.")
+
+        with st.expander("Guia de Análise:"):
+            st.markdown("""
+            ### Objetivo: 
+            Comparar o perfil das vulnerabilidades que entraram no catálogo KEV contra o restante da base de dados, validando a hipótese de que vulnerabilidades exploradas apresentam padrões distintos de severidade e probabilidade.
+
+            *  **Perfil de Fraquezas (CWE):** Compara os tipos de erros de programação. Certas falhas (como Injeção de Código) aparecem com mais frequência no KEV do que na base geral, indicando que são os métodos preferidos para invasões.
+
+            #### Interpretação das Cores:
+            - **Vermelho (No Catálogo KEV):** O perfil das ameaças concretas e confirmadas pela CISA.
+            - **Azul (Fora do Catálogo):** O perfil do "ruído de fundo" da segurança (vulnerabilidades teóricas que ainda não foram ou não serão exploradas).
+            """)
 
         # QUERY
         q_cwe_perfil = f"""
@@ -378,22 +389,8 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             st.plotly_chart(fig_cwe_perfil,
                             width='stretch',
                             key=f"cwe_perfil_bar_{filtro_estatistico_alias}")
-            
-        with st.expander("Guia de Análise:"):
-            st.markdown("""
-            ### Objetivo: 
-            Comparar o perfil das vulnerabilidades que entraram no catálogo KEV contra o restante da base de dados, validando a hipótese de que vulnerabilidades exploradas apresentam padrões distintos de severidade e probabilidade.
-
-            *  **Perfil de Fraquezas (CWE):** Compara os tipos de erros de programação. Certas falhas (como Injeção de Código) aparecem com mais frequência no KEV do que na base geral, indicando que são os métodos preferidos para invasões.
-
-            #### Interpretação das Cores:
-            - **Vermelho (No Catálogo KEV):** O perfil das ameaças concretas e confirmadas pela CISA.
-            - **Azul (Fora do Catálogo):** O perfil do "ruído de fundo" da segurança (vulnerabilidades teóricas que ainda não foram ou não serão exploradas).
-            """)
-
 
     st.divider()
-
 
     # ==============================================================================
     # CASO DE USO 5: TENDÊNCIA TEMPORAL DA EXPLORAÇÃO (VOLUME VS. RISCO)
@@ -402,6 +399,18 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
         st.subheader("Tendência Temporal: O volume implica em mais risco?")
 
         st.markdown("""Esta análise investiga se o crescimento anual no registro de vulnerabilidades reflete um aumento real na superfície de exploração ou se representa uma inflação de registros de baixo risco operacional.""")
+
+        with st.expander("Guia de Análise:"):
+            st.markdown("""
+                ### Objetivo: Volume de falhas vs. Risco real
+                Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
+
+                #### Como interpretar os gráficos:
+                *  **Volume Total vs. KEV:** Observe a diferença entre a linha azul (Total de CVEs) e a linha vermelha (KEV). Se a linha azul sobe rapidamente, mas a vermelha permanece estável, isso sugere que estamos descobrindo mais falhas "irrelevantes" ou teóricas do que novas ameaças práticas.
+
+                #### A conclusão prática:
+                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para as equipes de segurança, isso destrói o mito de que é preciso corrigir tudo. A estratégia moderna não é tentar zerar a fila de vulnerabilidades, mas usar inteligência para atacar cirurgicamente apenas as falhas que os criminosos realmente usam.
+            """)
 
         # QUERY
         q_tendencia_temporal = f"""
@@ -452,22 +461,23 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
             st.plotly_chart(fig_vol_evolucao, width='stretch', key=f"trend_vol_{filtro_estatistico_alias}")
 
+        st.divider()
+
+        # Grafico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
+        st.write("### Evolução da Probabilidade Média de Exploração (EPSS)")
+
         with st.expander("Guia de Análise:"):
             st.markdown("""
                 ### Objetivo: Volume de falhas vs. Risco real
                 Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
 
                 #### Como interpretar os gráficos:
-                *  **Volume Total vs. KEV:** Observe a diferença entre a linha azul (Total de CVEs) e a linha vermelha (KEV). Se a linha azul sobe rapidamente, mas a vermelha permanece estável, isso sugere que estamos descobrindo mais falhas "irrelevantes" ou teóricas do que novas ameaças práticas.
+                
+                *  **Média EPSS (Gráfico de Área):** Este indicador mostra a "temperatura" da base. Se a probabilidade média (EPSS) está caindo enquanto o volume sobe, estamos vivendo uma inflação de registros de baixo risco. Se o EPSS sobe, as falhas novas estão vindo mais "armaenizáveis".
 
-                #### A conclusão prática:
-                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para as equipes de segurança, isso destrói o mito de que é preciso corrigir tudo. A estratégia moderna não é tentar zerar a fila de vulnerabilidades, mas usar inteligência para atacar cirurgicamente apenas as falhas que os criminosos realmente usam.
+                #### O que isso prova:
+                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para um gestor de segurança, isso justifica focar recursos na inteligência de ameaças (KEV/EPSS) em vez de tentar "corrigir tudo" apenas pelo volume.
             """)
-
-        st.divider()
-
-        # Grafico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
-        st.write("### Evolução da Probabilidade Média de Exploração (EPSS)")
 
         fig_epss_trend = px.area(
             df_tendencia,
@@ -488,16 +498,3 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
         )
         
         st.plotly_chart(fig_epss_trend, width='stretch', key=f"trend_epss_{filtro_estatistico_alias}")
-
-        with st.expander("Guia de Análise:"):
-            st.markdown("""
-                ### Objetivo: Volume de falhas vs. Risco real
-                Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
-
-                #### Como interpretar os gráficos:
-                
-                *  **Média EPSS (Gráfico de Área):** Este indicador mostra a "temperatura" da base. Se a probabilidade média (EPSS) está caindo enquanto o volume sobe, estamos vivendo uma inflação de registros de baixo risco. Se o EPSS sobe, as falhas novas estão vindo mais "armaenizáveis".
-
-                #### O que isso prova:
-                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para um gestor de segurança, isso justifica focar recursos na inteligência de ameaças (KEV/EPSS) em vez de tentar "corrigir tudo" apenas pelo volume.
-            """)

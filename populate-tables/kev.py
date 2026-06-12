@@ -56,12 +56,10 @@ def insert_kev_data(conn, item):
         sql = """
             INSERT INTO kev (
                 cve_id, vendor_project, product,
-                date_added,  
-                due_date, known_ransomware_usage
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                date_added, due_date, known_ransomware_usage
+            ) VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (cve_id) DO UPDATE SET
                 known_ransomware_usage = EXCLUDED.known_ransomware_usage,
-                required_action = EXCLUDED.required_action,
                 due_date = EXCLUDED.due_date;
         """
 

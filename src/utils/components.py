@@ -2,6 +2,17 @@
 import streamlit as st
 
 def render_ransomware_icon(percentual):
+
+    # Tratamento de erro: se o banco retornar NULL, força o valor para 0.0
+    if percentual is None:
+        percentual = 0.0
+
+    # Definindo a cor de preenchimento baseada na paleta (CRITICAL #EF4444)
+    fill_color = "#EF4444"
+    background_icon = "#374151" # Cinza escuro para a parte não preenchida
+    
+    # ... resto do seu código ...
+
     # Definindo a cor de preenchimento baseada na paleta (CRITICAL #EF4444)
     fill_color = "#EF4444"
     background_icon = "#374151" # Cinza escuro para a parte não preenchida
@@ -45,4 +56,3 @@ def render_kpi_card(titulo, valor):
         </div>
     </div>
     """, unsafe_allow_html=True)
-
