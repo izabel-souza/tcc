@@ -2,7 +2,7 @@
 import streamlit as st
 import plotly.express as px
 from src.utils.database import get_data
-from src.utils.components import render_ransomware_icon
+from src.utils.components import apply_chart_layout, render_ransomware_icon
 
 #FUNCAO COM OS GRAFICOS
 def render_risk_tab(filtro_sql, filtro_estatistico_alias):
@@ -210,10 +210,9 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_scatter.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_scatter, margin=dict(l=75, r=55, t=70, b=75))
 
             st.plotly_chart(fig_scatter, width='stretch', key=f"scatter_prioridade_{filtro_sql}")
 
@@ -279,10 +278,9 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_cvss_comp.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_cvss_comp)
         
             st.plotly_chart(fig_cvss_comp, width='stretch', key=f"cvss_perfil_{filtro_sql}")
 
@@ -302,10 +300,9 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_epss_comp.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_epss_comp)
         
             st.plotly_chart(fig_epss_comp, width='stretch', key=f"epss_perfil_{filtro_sql}")
 
@@ -381,10 +378,9 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_cwe_perfil.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_cwe_perfil)
 
             st.plotly_chart(fig_cwe_perfil,
                             width='stretch',
@@ -454,10 +450,9 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
              # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_vol_evolucao.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_vol_evolucao)
 
             st.plotly_chart(fig_vol_evolucao, width='stretch', key=f"trend_vol_{filtro_estatistico_alias}")
 
@@ -493,8 +488,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
         
         # AJUSTE DE TRANSPARÊNCIA PARA O CARD
         fig_epss_trend.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-            plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
         )
+        apply_chart_layout(fig_epss_trend)
         
         st.plotly_chart(fig_epss_trend, width='stretch', key=f"trend_epss_{filtro_estatistico_alias}")

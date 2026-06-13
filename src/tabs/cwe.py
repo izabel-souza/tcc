@@ -2,6 +2,7 @@
 import streamlit as st
 import plotly.express as px
 from src.utils.database import get_data
+from src.utils.components import apply_chart_layout
 
 #FUNCAO COM OS GRAFICOS
 def render_cwe_tab(filtro_sql):
@@ -43,12 +44,11 @@ def render_cwe_tab(filtro_sql):
 
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_cwe.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
 
             fig_cwe.update_layout(yaxis={'categoryorder': 'total ascending'})
+            apply_chart_layout(fig_cwe)
             st.plotly_chart(fig_cwe, width='stretch', key=f"cwe_g_{filtro_sql}")
 
     # Grafico Top 10 CWEs em Vulnerabilidades Críticas
@@ -82,9 +82,8 @@ def render_cwe_tab(filtro_sql):
             
             fig_cwe_c.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente        
             )
+            apply_chart_layout(fig_cwe_c)
 
             st.plotly_chart(fig_cwe_c, width='stretch', key=f"cwe_c_{filtro_sql}")
 
@@ -188,8 +187,7 @@ def render_cwe_tab(filtro_sql):
 
             fig_cwe_final.update_layout(
                 xaxis_tickangle=-45,
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)'
             )
+            apply_chart_layout(fig_cwe_final, margin=dict(l=70, r=45, t=75, b=110))
 
             st.plotly_chart(fig_cwe_final, width='stretch', key=f"cwe_analise_{opcao_analise}_{filtro_sql}")

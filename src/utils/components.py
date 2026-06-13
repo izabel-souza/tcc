@@ -1,6 +1,39 @@
 # --- IMPORT ---
 import streamlit as st
 
+def apply_chart_layout(fig, margin=None, height=None):
+    """
+    Aplica espaçamento interno padrão aos gráficos Plotly.
+    """
+    layout_margin = margin or dict(l=70, r=45, t=65, b=70)
+    layout_args = {
+        "margin": layout_margin,
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(0,0,0,0)",
+    }
+
+    if height is not None:
+        layout_args["height"] = height
+
+    fig.update_layout(**layout_args)
+
+    title_text = fig.layout.title.text
+    if title_text:
+        fig.update_layout(
+            title={
+                "text": title_text,
+                "x": 0.02,
+                "xanchor": "left",
+                "y": 0.96,
+                "yanchor": "top",
+                "pad": {"l": 12, "r": 12, "t": 8, "b": 12},
+            }
+        )
+
+    fig.update_xaxes(automargin=True)
+    fig.update_yaxes(automargin=True)
+    return fig
+
 def render_ransomware_icon(percentual):
 
     # Tratamento de erro: se o banco retornar NULL, força o valor para 0.0

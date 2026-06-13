@@ -2,7 +2,7 @@
 import streamlit as st
 import plotly.express as px
 from src.utils.database import get_data
-from src.utils.components import render_kpi_card
+from src.utils.components import apply_chart_layout, render_kpi_card
 
 #FUNCAO COM OS GRAFICOS
 def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas):
@@ -79,10 +79,9 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
             )
             
             fig_bar.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_bar)
             
             st.plotly_chart(fig_bar, width="stretch", key=f"bar_{filtro_sql}")
 
@@ -130,9 +129,8 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
 
                 fig_pie.update_layout(
                     legend_itemclick="toggleothers",
-                    legend_itemdoubleclick="toggle",
-                    paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                    plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
+                    legend_itemdoubleclick="toggle"
                 )
+                apply_chart_layout(fig_pie, margin=dict(l=45, r=45, t=45, b=45))
 
                 st.plotly_chart(fig_pie, width='stretch', key=f"pie_{filtro_sql}")

@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from src.utils.database import get_data
+from src.utils.components import apply_chart_layout
 
 #FUNCAO COM OS GRAFICOS
 def render_mitre_tab(filtro_sql):
@@ -51,9 +52,8 @@ def render_mitre_tab(filtro_sql):
 
                 fig_tech.update_layout(
                     yaxis={'categoryorder': 'total ascending'},
-                    paper_bgcolor='rgba(0,0,0,0)', 
-                    plot_bgcolor='rgba(0,0,0,0)'
                 )
+                apply_chart_layout(fig_tech)
 
                 st.plotly_chart(fig_tech, width='stretch', key=f"tech_{filtro_sql}")
             else:
@@ -99,9 +99,8 @@ def render_mitre_tab(filtro_sql):
 
                 fig_taticas.update_layout(
                     yaxis={'categoryorder': 'total ascending'},
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)'
                 )
+                apply_chart_layout(fig_taticas)
 
                 st.plotly_chart(fig_taticas, width='stretch', key=f"tac_{filtro_sql}")
             else:
@@ -152,8 +151,9 @@ def render_mitre_tab(filtro_sql):
                 labels={'qtd_cves': 'Total de CVEs', 'tecnica': 'Técnica', 'fraqueza': 'Fraqueza (CWE)'}
             )
             fig_tree.update_layout(
-                margin=dict(t=30, l=10, r=10, b=10),
-                paper_bgcolor='rgba(0,0,0,0)'
+                margin=dict(t=45, l=25, r=25, b=25),
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_tree, width='stretch', key=f"tree_{filtro_sql}")
         else:
@@ -250,9 +250,9 @@ def render_mitre_tab(filtro_sql):
             fig_sankey.update_layout(
                 title_text="Fluxo de Disseminação de Vulnerabilidades",
                 font_size=12, template="plotly_dark",
-                paper_bgcolor='rgba(0,0,0,0)',
                 height=600
             )
+            apply_chart_layout(fig_sankey, margin=dict(l=50, r=50, t=80, b=50), height=600)
 
             st.plotly_chart(fig_sankey, width='stretch')
 
@@ -296,9 +296,8 @@ def render_mitre_tab(filtro_sql):
 
             fig_tech_crit.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)'
             )
+            apply_chart_layout(fig_tech_crit)
         
             st.plotly_chart(fig_tech_crit, width='stretch', key=f"mitre_crit_{filtro_sql}")
 
@@ -339,8 +338,7 @@ def render_mitre_tab(filtro_sql):
             
             fig_tac_kev.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)'
             )
+            apply_chart_layout(fig_tac_kev)
 
             st.plotly_chart(fig_tac_kev, width='stretch', key=f"mitre_kev_{filtro_sql}")
