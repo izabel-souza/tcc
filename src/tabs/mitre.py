@@ -9,7 +9,7 @@ def render_mitre_tab(filtro_sql):
 
     st.subheader("Inteligência de Ameaças: MITRE ATT&CK")
     st.markdown(
-        "Cruzamento das vulnerabilidades com as Técnicas do MITRE mais prováveis de serem utilizadas pelos atacantes."
+        "Cruzamento das vulnerabilidades com as técnicas do MITRE mais prováveis de serem utilizadas pelos atacantes."
     )
 
     c1, c2 = st.columns([1, 1])
@@ -91,7 +91,7 @@ def render_mitre_tab(filtro_sql):
                     orientation='h',
                     labels={
                         'quantidade': 'Quantidade',
-                        'tatica': 'Tática MITRE (Objetivo)'
+                        'tatica': 'Tática MITRE (objetivo)'
                     },
                     color='quantidade',
                     color_continuous_scale='Blues'
@@ -174,22 +174,22 @@ def render_mitre_tab(filtro_sql):
         
         st.subheader("Fluxograma de Exploração (CWE ➔ Técnica ➔ Tática)")
 
-        with st.expander("Guia de Análise: "):
+        with st.expander("Guia de análise: "):
             st.markdown("""
-                ### Objetivo: Visualizar a Ponte entre Erro e Comportamento
+                ### Objetivo: Visualizar a ponte entre erro e comportamento
                 Este diagrama de **Sankey** revela como uma falha técnica no código se transforma em uma capacidade de ataque para o adversário. O fluxo segue a lógica: **Onde o erro nasce ➔ Como ele é usado ➔ O que o atacante quer.**
 
                 #### Como ler o fluxo (Da esquerda para a direita):
-                1.  **CWE (Amarelo - Origem):** Representa a fraqueza de software (ex: Estouro de Buffer). É a causa raiz técnica.
-                2.  **Técnica (Azul - Meio):** Representa o método do **MITRE ATT&CK** utilizado para explorar aquela fraqueza (ex: Execução de API).
-                3.  **Tática (Vermelho - Destino):** Representa o objetivo final do atacante (ex: Persistência ou Exfiltração de Dados).
+                1.  **CWE (amarelo - origem):** Representa a fraqueza de software (ex: estouro de buffer). É a causa raiz técnica.
+                2.  **Técnica (azul - meio):** Representa o método do **MITRE ATT&CK** utilizado para explorar aquela fraqueza (ex: execução de API).
+                3.  **Tática (vermelho - destino):** Representa o objetivo final do atacante (ex: persistência ou exfiltração de dados).
 
                 #### O que observar:
-                * **Espessura das Barras:** Quanto mais larga a conexão, maior é o volume de vulnerabilidades que seguem aquele caminho específico.
+                * **Espessura das barras:** Quanto mais larga a conexão, maior é o volume de vulnerabilidades que seguem aquele caminho específico.
                 * **Convergência:** Observe como diferentes tipos de erros de programação (CWEs) podem convergir para uma mesma técnica de ataque, mostrando a "versatilidade" de certas ferramentas dos invasores.
 
-                #### Valor para a Defesa:
-                Este gráfico sustenta o conceito de **Threat-Informed Defense**. Ao entender qual tática é mais alimentada por certas fraquezas, a organização pode priorizar correções de código que "cortam o fluxo" de múltiplos comportamentos de ataque simultaneamente.
+                #### Valor para a defesa:
+                Este gráfico sustenta o conceito de **defesa orientada por ameaças**. Ao entender qual tática é mais alimentada por certas fraquezas, a organização pode priorizar correções de código que "cortam o fluxo" de múltiplos comportamentos de ataque simultaneamente.
             """)
 
         query_sankey = f"""
@@ -287,8 +287,8 @@ def render_mitre_tab(filtro_sql):
                 y='nome_tecnica',
                 orientation='h',
                 labels={
-                    'quantidade_vulnerabilidades': 'Quantidade de Vulnerabilidades Críticas',
-                    'nome_tecnica': 'Técnica de Ataque'
+                    'quantidade_vulnerabilidades': 'Quantidade de vulnerabilidades críticas',
+                    'nome_tecnica': 'Técnica de ataque'
                 },
                 color='quantidade_vulnerabilidades',
                 color_continuous_scale='Reds'
@@ -331,8 +331,8 @@ def render_mitre_tab(filtro_sql):
                 y='nome_tatica',
                 orientation='h',
                 labels={
-                    'quantidade_no_catalogo_kev': 'Quantidade no Catálogo KEV',
-                    'nome_tatica': 'Tática do Atacante'
+                    'quantidade_no_catalogo_kev': 'Quantidade no catálogo KEV',
+                    'nome_tatica': 'Tática do atacante'
                 },
                 color='quantidade_no_catalogo_kev',
                 color_continuous_scale='Blues')

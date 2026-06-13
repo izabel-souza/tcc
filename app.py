@@ -210,7 +210,7 @@ titulos_paginas = ["Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Pro
 # --- NAVEGACAO PRINCIPAL ---
 st.markdown('<div class="vulnera-top-nav">', unsafe_allow_html=True)
 pagina_selecionada = st.pills(
-    label="Menu de Navegação",
+    label="Menu de navegação",
     options=titulos_paginas,
     default=titulos_paginas[0],
     key="pagina_ativa",
@@ -257,7 +257,7 @@ st.sidebar.header("Filtros Globais")
 # Filtro de Ano - Range Slider
 ano_min, ano_max = 2015, 2026
 periodo = st.sidebar.slider(
-    "Período de Publicação (CVE)",
+    "Período de publicação (CVE)",
     min_value=ano_min,
     max_value=ano_max,
     value=(ano_min, ano_max),

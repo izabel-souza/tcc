@@ -96,58 +96,58 @@ def render_cwe_tab(filtro_sql):
     with st.container(border=True):
         st.subheader("Análise de Fraquezas por Perspectivas de Risco")
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Identificar as Falhas de Programação mais Perigosas
+                ### Objetivo: Identificar as falhas de programação mais perigosas
                 Este caso de uso investiga quais tipos de erros de desenvolvimento (**CWE**) estão por trás das vulnerabilidades mais exploradas no mundo real.
 
-                #### Como interpretar as 4 Perspectivas:
-                1.  **Volume Total:** Mostra quais falhas são mais comuns na base geral (ex: falhas de permissão ou gestão de memória).
-                2.  **Vulnerabilidades Críticas:** Filtra as falhas que geram os maiores impactos teóricos (CVSS > 9.0).
-                3.  **Exploração Ativa (KEV):** Esta é a visão mais importante para defesa. Revela quais erros de programação os atacantes **realmente conseguem explorar** hoje.
-                4.  **Maior Média EPSS:** Identifica classes de falhas que, estatisticamente, têm maior chance de virarem um problema no futuro próximo.
+                #### Como interpretar as 4 perspectivas:
+                1.  **Volume total:** Mostra quais falhas são mais comuns na base geral (ex: falhas de permissão ou gestão de memória).
+                2.  **Vulnerabilidades críticas:** Filtra as falhas que geram os maiores impactos teóricos (CVSS > 9.0).
+                3.  **Exploração ativa (KEV):** Esta é a visão mais importante para defesa. Revela quais erros de programação os atacantes **realmente conseguem explorar** hoje.
+                4.  **Maior média EPSS:** Identifica classes de falhas que, estatisticamente, têm maior chance de virarem um problema no futuro próximo.
 
                 #### Valor:
-                Esta análise conecta a **Segurança de Aplicações (AppSec)** com a **Inteligência de Ameaças**. Ela permite provar que certas classes de fraqueza (como *Injection* ou *Broken Access Control*) concentram muito mais risco prático do que outras, mesmo que não sejam as mais numerosas no total.
+                Esta análise conecta a **segurança de aplicações (AppSec)** com a **inteligência de ameaças**. Ela permite provar que certas classes de fraqueza (como *Injection* ou *Broken Access Control*) concentram muito mais risco prático do que outras, mesmo que não sejam as mais numerosas no total.
             """)
 
         # Seletor para abranger todo o escopo da ideia analítica
         opcao_analise = st.selectbox(
             "Selecione a perspectiva de análise das fraquezas:", [
-                "Mais Frequentes (Volume Total)",
-                "Mais Frequentes em Vulnerabilidades Críticas",
-                "Mais Presentes em Exploração Ativa (KEV)",
-                "Maior Média de Probabilidade de Exploração (EPSS)"
+                "Mais frequentes (volume total)",
+                "Mais frequentes em vulnerabilidades críticas",
+                "Mais presentes em exploração ativa (KEV)",
+                "Maior média de probabilidade de exploração (EPSS)"
             ]
         )
 
         # Lógica de consulta baseada na opção selecionada
-        if opcao_analise == "Mais Frequentes (Volume Total)":
+        if opcao_analise == "Mais frequentes (volume total)":
             order_by = "total_vulnerabilidades DESC"
             extra_filter = ""
             y_axis = "total_vulnerabilidades"
-            label_y = "Total de Vulnerabilidades"
+            label_y = "Total de vulnerabilidades"
             titulo_grafico = "Top 10 Fraquezas por Volume Total de Registros"
 
-        elif opcao_analise == "Mais Frequentes em Vulnerabilidades Críticas":
+        elif opcao_analise == "Mais frequentes em vulnerabilidades críticas":
             order_by = "total_vulnerabilidades DESC"
             extra_filter = "AND c.cvss_base_severity = 'CRITICAL'"
             y_axis = "total_vulnerabilidades"
-            label_y = "Quantidade de Vulnerabilidades Críticas"
+            label_y = "Quantidade de vulnerabilidades críticas"
             titulo_grafico = "Top 10 Fraquezas em Vulnerabilidades de Severidade Crítica"
 
-        elif opcao_analise == "Mais Presentes em Exploração Ativa (KEV)":
+        elif opcao_analise == "Mais presentes em exploração ativa (KEV)":
             order_by = "quantidade_no_kev DESC"
             extra_filter = "AND k.cve_id IS NOT NULL"
             y_axis = "quantidade_no_kev"
-            label_y = "Quantidade no Catálogo KEV"
+            label_y = "Quantidade no catálogo KEV"
             titulo_grafico = "Fraquezas com Maior Presença em Exploração Ativa (CISA KEV)"
 
         else:  # Maior Média de EPSS
             order_by = "media_probabilidade_epss DESC"
             extra_filter = ""
             y_axis = "media_probabilidade_epss"
-            label_y = "Média de Probabilidade (EPSS)"
+            label_y = "Média de probabilidade (EPSS)"
             titulo_grafico = "Fraquezas com Maior Probabilidade Média de Exploração"
 
         #QUERY PARA METRICAS

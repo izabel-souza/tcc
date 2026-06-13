@@ -30,7 +30,7 @@ def render_ransomware_icon(percentual):
             </div>
         </div>
         <div style="margin-top: 15px; font-size: 28px; font-weight: bold; color: #F9FAFB;">{percentual:.1f}%</div>
-        <div style="color: #9CA3AF; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Presença de Ransomware</div>
+        <div style="color: #9CA3AF; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Presença de ransomware</div>
     </div>
     """, unsafe_allow_html=True)
 

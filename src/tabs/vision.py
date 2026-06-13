@@ -30,7 +30,7 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
     # KPI COM MEDIA CVSS DAS CVEs
     with col2:
         valor_media = f"{df_kpi['media'][0]}"
-        render_kpi_card("Média Score CVSS", valor_media)
+        render_kpi_card("Média do Score CVSS", valor_media)
 
     # KPI COM % DE CVE EM EXPLORACAO ATIVA (KEV)
     with col3:
@@ -67,7 +67,7 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
                 color='cvss_base_severity', 
                 labels={
                     "qtd": "Quantidade de CVEs", 
-                    "mes_ano": "Mês/Ano de Publicação", 
+                    "mes_ano": "Mês/ano de publicação", 
                     'cvss_base_severity': 'Severidade CVSS'
                 },
                 color_discrete_map={
@@ -125,7 +125,7 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
                 
                 fig_pie.update_traces(
                     texttemplate="<b>%{label}</b><br>%{customdata[0]:.1f}%",
-                    hovertemplate="<b>%{label}</b><br>Qtd: %{value}<br>Prop. no Período: %{customdata[0]:.1f}%"
+                    hovertemplate="<b>%{label}</b><br>Qtd: %{value}<br>Prop. no período: %{customdata[0]:.1f}%"
                 )
 
                 fig_pie.update_layout(
