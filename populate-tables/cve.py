@@ -46,6 +46,65 @@ def get_connection():
         return None
 
 
+def get_english_description(cve_item):
+    for item in cve_item.get("descriptions", []):
+        if item.get("lang") == "en":
+            return item.get("value")
+
+    return None
+
+
+def get_cve_tags(cve_item):
+    tags = []
+    for item in cve_item.get("cveTags", []):
+        if isinstance(item, dict):
+            tags.extend(item.get("tags", []))
+        elif isinstance(item, str):
+            tags.append(item)
+
+    return tags
+
+
+def get_preferred_cvss_metric(cve_item):
+    metrics = cve_item.get("metrics", {})
+    metric_sources = [
+        ("cvssMetricV31", "CVSS v3.1"),
+        ("cvssMetricV30", "CVSS v3.0"),
+        ("cvssMetricV40", "CVSS v4.0"),
+        ("cvssMetricV2", "CVSS v2.0"),
+    ]
+
+    for metric_key, version_label in metric_sources:
+        metric_list = metrics.get(metric_key, [])
+        if metric_list:
+            return metric_list[0], version_label
+
+    return {}, None
+
+
+def extract_cvss_data(cve_item):
+    metric_obj, version_label = get_preferred_cvss_metric(cve_item)
+    cvss_data = metric_obj.get("cvssData", {})
+
+    return {
+        "metric_type": metric_obj.get("type"),
+        "version": cvss_data.get("version") or version_label,
+        "vector_string": cvss_data.get("vectorString"),
+        "base_score": cvss_data.get("baseScore"),
+        "base_severity": cvss_data.get("baseSeverity") or metric_obj.get("baseSeverity"),
+        "attack_vector": cvss_data.get("attackVector") or cvss_data.get("accessVector"),
+        "attack_complexity": cvss_data.get("attackComplexity") or cvss_data.get("accessComplexity"),
+        "privileges_required": cvss_data.get("privilegesRequired") or cvss_data.get("authentication"),
+        "user_interaction": cvss_data.get("userInteraction"),
+        "scope": cvss_data.get("scope"),
+        "confidentiality_impact": cvss_data.get("confidentialityImpact"),
+        "integrity_impact": cvss_data.get("integrityImpact"),
+        "availability_impact": cvss_data.get("availabilityImpact"),
+        "exploitability_score": metric_obj.get("exploitabilityScore"),
+        "impact_score": metric_obj.get("impactScore"),
+    }
+
+
 def insert_cve_data(conn, cve_item):
     cursor = conn.cursor()
     cve_id = cve_item.get("id", "UNKNOWN")
@@ -53,30 +112,81 @@ def insert_cve_data(conn, cve_item):
         # Extração das datas
         published = cve_item.get("published")
         last_modified = cve_item.get("lastModified")
-
-        # Extração das métricas simplificadas (Apenas Base Score e Severity)
-        metrics_list = cve_item.get("metrics", {}).get("cvssMetricV31", [])
-        base_score = None
-        severity = None
-
-        if metrics_list:
-            metric_obj = metrics_list[0]
-            cvss_data = metric_obj.get("cvssData", {})
-            base_score = cvss_data.get("baseScore")
-            severity = cvss_data.get("baseSeverity")
+        vuln_status = cve_item.get("vulnStatus")
+        cve_tags = get_cve_tags(cve_item)
+        description = get_english_description(cve_item)
+        cvss = extract_cvss_data(cve_item)
         
-        # Query de INSERT baseada no novo schema
         sql_insert = """
             INSERT INTO cves (
-                id, published_date, last_modified_date, cvss_base_score, cvss_base_severity
-            ) VALUES (%s, %s, %s, %s, %s)
+                id,
+                published_date,
+                last_modified_date,
+                vuln_status,
+                cve_tags,
+                description,
+                cvss_metric_type,
+                cvss_version,
+                cvss_vector_string,
+                cvss_base_score,
+                cvss_base_severity,
+                cvss_attack_vector,
+                cvss_attack_complexity,
+                cvss_privileges_required,
+                cvss_user_interaction,
+                cvss_scope,
+                cvss_confidentiality_impact,
+                cvss_integrity_impact,
+                cvss_availability_impact,
+                cvss_exploitability_score,
+                cvss_impact_score
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
             ON CONFLICT (id) DO UPDATE SET
+                published_date = EXCLUDED.published_date,
                 last_modified_date = EXCLUDED.last_modified_date,
+                vuln_status = EXCLUDED.vuln_status,
+                cve_tags = EXCLUDED.cve_tags,
+                description = EXCLUDED.description,
+                cvss_metric_type = EXCLUDED.cvss_metric_type,
+                cvss_version = EXCLUDED.cvss_version,
+                cvss_vector_string = EXCLUDED.cvss_vector_string,
                 cvss_base_score = EXCLUDED.cvss_base_score,
-                cvss_base_severity = EXCLUDED.cvss_base_severity;
+                cvss_base_severity = EXCLUDED.cvss_base_severity,
+                cvss_attack_vector = EXCLUDED.cvss_attack_vector,
+                cvss_attack_complexity = EXCLUDED.cvss_attack_complexity,
+                cvss_privileges_required = EXCLUDED.cvss_privileges_required,
+                cvss_user_interaction = EXCLUDED.cvss_user_interaction,
+                cvss_scope = EXCLUDED.cvss_scope,
+                cvss_confidentiality_impact = EXCLUDED.cvss_confidentiality_impact,
+                cvss_integrity_impact = EXCLUDED.cvss_integrity_impact,
+                cvss_availability_impact = EXCLUDED.cvss_availability_impact,
+                cvss_exploitability_score = EXCLUDED.cvss_exploitability_score,
+                cvss_impact_score = EXCLUDED.cvss_impact_score;
         """
         cursor.execute(sql_insert, (
-            cve_id, published, last_modified, base_score, severity
+            cve_id,
+            published,
+            last_modified,
+            vuln_status,
+            cve_tags,
+            description,
+            cvss["metric_type"],
+            cvss["version"],
+            cvss["vector_string"],
+            cvss["base_score"],
+            cvss["base_severity"],
+            cvss["attack_vector"],
+            cvss["attack_complexity"],
+            cvss["privileges_required"],
+            cvss["user_interaction"],
+            cvss["scope"],
+            cvss["confidentiality_impact"],
+            cvss["integrity_impact"],
+            cvss["availability_impact"],
+            cvss["exploitability_score"],
+            cvss["impact_score"],
         ))
 
         # O mapeamento de CWEs foi mantido intacto conforme o novo schema

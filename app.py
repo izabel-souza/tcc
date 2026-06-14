@@ -5,6 +5,7 @@ import base64
 
 import streamlit as st
 from src.tabs.about import render_about_tab
+from src.tabs.cve_lookup import render_cve_lookup_tab
 from src.tabs.cwe import render_cwe_tab
 from src.tabs.kev_epss import render_risk_tab
 from src.tabs.mitre import render_mitre_tab
@@ -242,7 +243,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # NOME DAS PAGINAS/ABAS
-titulos_paginas = ["Sobre", "Visão Geral", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"]
+titulos_paginas = ["Sobre", "Visão Geral", "Consulta CVE", "Risco e Exploração", "Raiz do Problema", "Padrões de Ataque"]
 
 # --- NAVEGACAO PRINCIPAL ---
 st.markdown('<div class="vulnera-top-nav">', unsafe_allow_html=True)
@@ -361,6 +362,9 @@ if pagina_selecionada == "Sobre":
 
 elif pagina_selecionada == "Visão Geral":
     render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas)
+
+elif pagina_selecionada == "Consulta CVE":
+    render_cve_lookup_tab(filtro_sql_alias)
 
 elif pagina_selecionada == "Risco e Exploração":
     render_risk_tab(filtro_sql_alias, filtro_estatistico_alias)
