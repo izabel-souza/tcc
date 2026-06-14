@@ -1,5 +1,6 @@
 # --- IMPORTS ---
 from pathlib import Path
+from datetime import date
 import base64
 
 import streamlit as st
@@ -8,6 +9,7 @@ from src.tabs.cwe import render_cwe_tab
 from src.tabs.kev_epss import render_risk_tab
 from src.tabs.mitre import render_mitre_tab
 from src.tabs.vision import render_vision_tab
+from src.utils.database import get_data
 
 # --- ASSETS ---
 BASE_DIR = Path(__file__).resolve().parent
@@ -22,6 +24,41 @@ st.set_page_config(
     page_icon=str(ICON_PATH),
     layout="wide"
 )
+
+
+def normalizar_data(valor, fallback):
+    if valor is None:
+        return fallback
+
+    if isinstance(valor, date):
+        return valor
+
+    if hasattr(valor, "date"):
+        return valor.date()
+
+    try:
+        return date.fromisoformat(str(valor)[:10])
+    except ValueError:
+        return fallback
+
+
+@st.cache_data(show_spinner=False)
+def buscar_ultima_data_publicacao():
+    fallback = date.today()
+
+    try:
+        resultado = get_data("""
+            SELECT MAX(published_date)::date AS data_max
+            FROM cves
+            WHERE published_date IS NOT NULL
+        """)
+    except Exception:
+        return fallback
+
+    if resultado.empty:
+        return fallback
+
+    return normalizar_data(resultado.loc[0, "data_max"], fallback)
 
 st.markdown("""
     <style>
@@ -254,14 +291,26 @@ st.sidebar.markdown(
 
 st.sidebar.header("Filtros Globais")
 
-# Filtro de Ano - Range Slider
-ano_min, ano_max = 2015, 2026
-periodo = st.sidebar.slider(
+# Filtro de data de publicação
+data_min = date(2015, 1, 1)
+data_max = max(buscar_ultima_data_publicacao(), data_min)
+periodo = st.sidebar.date_input(
     "Período de publicação (CVE)",
-    min_value=ano_min,
-    max_value=ano_max,
-    value=(ano_min, ano_max),
-    help="Arraste para selecionar o intervalo de anos.")
+    value=(data_min, data_max),
+    min_value=data_min,
+    max_value=data_max,
+    format="DD/MM/YYYY",
+    help="Selecione o intervalo de datas de publicação das CVEs."
+)
+
+if isinstance(periodo, tuple) and len(periodo) == 2:
+    data_inicio, data_fim = periodo
+else:
+    data_inicio = data_min
+    data_fim = data_max
+
+if data_inicio > data_fim:
+    data_inicio, data_fim = data_fim, data_inicio
 
 # Filtro de CVE
 busca_cve = st.sidebar.text_input(
@@ -279,12 +328,12 @@ severidades_selecionadas = st.sidebar.multiselect(
     placeholder="Todas as severidades")
 
 # --- FILTRO VAZIO = RETORNA TUDO ---
-if periodo[0] == ano_min and periodo[1] == ano_max:
+if data_inicio == data_min and data_fim == data_max:
     condicao_ano = "1=1"
     condicao_ano_alias = "1=1"
 else:
-    condicao_ano = f"EXTRACT(YEAR FROM published_date) BETWEEN {periodo[0]} AND {periodo[1]}"
-    condicao_ano_alias = f"EXTRACT(YEAR FROM c.published_date) BETWEEN {periodo[0]} AND {periodo[1]}"
+    condicao_ano = f"published_date::date BETWEEN '{data_inicio.isoformat()}' AND '{data_fim.isoformat()}'"
+    condicao_ano_alias = f"c.published_date::date BETWEEN '{data_inicio.isoformat()}' AND '{data_fim.isoformat()}'"
 
 if severidades_selecionadas:
     sev_formatadas = "', '".join(severidades_selecionadas)
