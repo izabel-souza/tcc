@@ -208,6 +208,22 @@ st.markdown("""
         line-height: 1.35;
     }
 
+    [data-testid="stSidebar"] div.stButton > button {
+        min-height: 2.25rem;
+        border: 1px solid rgba(56, 182, 255, 0.34);
+        border-radius: 8px;
+        background: rgba(0, 74, 173, 0.18);
+        color: #E0F2FE;
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+
+    [data-testid="stSidebar"] div.stButton > button:hover {
+        border-color: rgba(56, 182, 255, 0.62);
+        background: rgba(0, 74, 173, 0.28);
+        color: #F8FAFC;
+    }
+
     h1, h2, h3 {
         color: var(--vulnera-text);
         letter-spacing: 0;
@@ -292,6 +308,13 @@ st.sidebar.markdown(
 
 st.sidebar.header("Filtros Globais")
 
+
+def limpar_filtros(data_inicial, data_final):
+    st.session_state["filtro_periodo_publicacao"] = (data_inicial, data_final)
+    st.session_state["filtro_busca_cve"] = ""
+    st.session_state["filtro_severidade_cvss"] = []
+
+
 # Filtro de data de publicação
 data_min = date(2015, 1, 1)
 data_max = max(buscar_ultima_data_publicacao(), data_min)
@@ -301,6 +324,7 @@ periodo = st.sidebar.date_input(
     min_value=data_min,
     max_value=data_max,
     format="DD/MM/YYYY",
+    key="filtro_periodo_publicacao",
     help="Selecione o intervalo de datas de publicação das CVEs."
 )
 
@@ -317,6 +341,7 @@ if data_inicio > data_fim:
 busca_cve = st.sidebar.text_input(
     "Buscar CVE por ID",
     placeholder="Ex: CVE-2024-1234",
+    key="filtro_busca_cve",
     help="Digite o ID completo ou parcial para filtrar."
 )
 
@@ -326,7 +351,18 @@ severidades_selecionadas = st.sidebar.multiselect(
     "Severidade CVSS",
     options=opcoes_severidade,
     default=[],
+    key="filtro_severidade_cvss",
     placeholder="Todas as severidades")
+
+st.sidebar.markdown('<div style="height: 0.55rem;"></div>', unsafe_allow_html=True)
+_, col_limpar_filtros, _ = st.sidebar.columns([0.12, 0.76, 0.12])
+with col_limpar_filtros:
+    st.button(
+        "Limpar filtros",
+        use_container_width=True,
+        on_click=limpar_filtros,
+        args=(data_min, data_max)
+    )
 
 # --- FILTRO VAZIO = RETORNA TUDO ---
 if data_inicio == data_min and data_fim == data_max:
