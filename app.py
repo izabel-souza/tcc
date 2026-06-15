@@ -397,7 +397,14 @@ if pagina_selecionada == "Sobre":
     render_about_tab()
 
 elif pagina_selecionada == "Visão Geral":
-    render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas)
+    render_vision_tab(
+        filtro_sql,
+        filtro_sql_alias,
+        condicao_ano,
+        severidades_selecionadas,
+        data_inicio,
+        data_fim
+    )
 
 elif pagina_selecionada == "Consulta CVE":
     render_cve_lookup_tab(filtro_sql_alias)

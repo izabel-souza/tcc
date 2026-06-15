@@ -5,7 +5,14 @@ from src.utils.database import get_data
 from src.utils.components import apply_chart_layout, render_kpi_card
 
 #FUNCAO COM OS GRAFICOS
-def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_selecionadas):
+def render_vision_tab(
+    filtro_sql,
+    filtro_sql_alias,
+    condicao_ano,
+    severidades_selecionadas,
+    data_inicio=None,
+    data_fim=None
+):
     st.subheader("Métricas Globais de Vulnerabilidades")
 
     # QUERY DOS KPIs
@@ -46,28 +53,81 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
     with c1:
         with st.container(border=True): # envolve o gráfico no card
             st.subheader("Evolução Temporal")
+            intervalo_dias = (data_fim - data_inicio).days if data_inicio and data_fim else 9999
+
+            if intervalo_dias > 365:
+                periodo_sql = "EXTRACT(YEAR FROM published_date)::int"
+                periodo_ordem_sql = "EXTRACT(YEAR FROM published_date)::int"
+                periodo_label = "Ano de publicação"
+                eixo_x_label = "Ano de publicação"
+                eixo_x_config = dict(
+                    type="category",
+                    title=periodo_label,
+                    tickangle=0
+                )
+            elif intervalo_dias > 31:
+                periodo_sql = """
+                    CASE EXTRACT(MONTH FROM published_date)::int
+                        WHEN 1 THEN 'jan'
+                        WHEN 2 THEN 'fev'
+                        WHEN 3 THEN 'mar'
+                        WHEN 4 THEN 'abr'
+                        WHEN 5 THEN 'mai'
+                        WHEN 6 THEN 'jun'
+                        WHEN 7 THEN 'jul'
+                        WHEN 8 THEN 'ago'
+                        WHEN 9 THEN 'set'
+                        WHEN 10 THEN 'out'
+                        WHEN 11 THEN 'nov'
+                        WHEN 12 THEN 'dez'
+                    END || ' ' || EXTRACT(YEAR FROM published_date)::int
+                """
+                periodo_ordem_sql = "DATE_TRUNC('month', published_date)::date"
+                periodo_label = "Mês/ano de publicação"
+                eixo_x_label = "Mês/ano de publicação"
+                eixo_x_config = dict(
+                    type="category",
+                    title=periodo_label,
+                    tickangle=-35
+                )
+            else:
+                periodo_sql = "TO_CHAR(published_date::date, 'DD/MM')"
+                periodo_ordem_sql = "published_date::date"
+                periodo_label = "Dia de publicação"
+                eixo_x_label = "Dia de publicação"
+                eixo_x_config = dict(
+                    type="category",
+                    title=periodo_label,
+                    tickangle=-35
+                )
 
             timeline_query = f"""
                 SELECT 
-                    TO_CHAR(published_date, 'YYYY-MM') as mes_ano, 
+                    {periodo_sql} as periodo_publicacao,
+                    {periodo_ordem_sql} as ordem_periodo,
                     cvss_base_severity, 
                     COUNT(id) as qtd
                 FROM cves 
                 WHERE {filtro_sql} AND cvss_base_severity IS NOT NULL
-                GROUP BY 1, 2 
-                ORDER BY 1
+                GROUP BY 1, 2, 3
+                ORDER BY 2
             """
 
             df_timeline = get_data(timeline_query)
+            categorias_periodo = df_timeline["periodo_publicacao"].drop_duplicates().tolist()
+            tickvals_periodo = categorias_periodo
+
+            if intervalo_dias <= 31 and len(categorias_periodo) > 16:
+                tickvals_periodo = categorias_periodo[::2]
 
             fig_bar = px.bar(
                 df_timeline, 
-                x='mes_ano', 
+                x='periodo_publicacao',
                 y='qtd', 
                 color='cvss_base_severity', 
                 labels={
                     "qtd": "Quantidade de CVEs", 
-                    "mes_ano": "Mês/ano de publicação", 
+                    "periodo_publicacao": eixo_x_label,
                     'cvss_base_severity': 'Severidade CVSS'
                 },
                 color_discrete_map={
@@ -77,9 +137,16 @@ def render_vision_tab(filtro_sql, filtro_sql_alias, condicao_ano, severidades_se
                     'LOW': 'yellow'
                 }
             )
+            fig_bar.update_xaxes(
+                categoryorder="array",
+                categoryarray=categorias_periodo,
+                tickmode="array",
+                tickvals=tickvals_periodo
+            )
             
             fig_bar.update_layout(
-                legend_itemclick="toggleothers"
+                legend_itemclick="toggleothers",
+                xaxis=eixo_x_config
             )
             apply_chart_layout(fig_bar)
             
