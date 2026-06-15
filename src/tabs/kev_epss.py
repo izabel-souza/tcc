@@ -253,17 +253,16 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: O perfil das ameaças reais
-                Não basta saber que uma falha existe; é preciso entender o porquê os atacantes a escolhem. Esta análise divide as vulnerabilidades em dois mundos (as exploradas na prática e as teóricas) para revelar o padrão de escolha dos cibercriminosos.
+                ### Objetivo: Comparar risco técnico e risco observado
+                Esta análise compara vulnerabilidades presentes no catálogo KEV com o restante da base para verificar se falhas exploradas ativamente apresentam um perfil diferente.
 
-                #### O que observar nos comparativos:
-                1. **Severidade (CVSS):** Os atacantes só buscam as falhas mais críticas? Muitas vezes, os dados mostram que eles utilizam falhas de nota média que são mais fáceis de explorar ou que servem de "porta de entrada" para ataques maiores.
-                2. **Probabilidade (EPSS):** As falhas que já foram exploradas apresentam médias de EPSS drasticamente maiores. Isso prova visualmente que prever ataques usando probabilidade funciona muito melhor do que olhar apenas para a nota de severidade.
-                3. **Tipos de Erro (CWE):** Certos erros de programação (como injeção de código ou falhas de senha) aparecem com muito mais frequência nas ameaças reais do que no volume geral. É o método "favorito" dos invasores.
+                #### Como interpretar:
+                1. **CVSS médio:** mostra se as vulnerabilidades exploradas tendem a ter maior severidade técnica.
+                2. **EPSS médio:** mostra se as vulnerabilidades exploradas também têm maior probabilidade estimada de exploração.
+                3. **Diferença entre os grupos:** quanto maior a distância entre KEV e base geral, mais forte é o indício de que a exploração real não depende apenas da severidade CVSS.
 
-                #### O que significam as cores:
-                * **Vermelho (no catálogo KEV):** O cenário real. Ameaças concretas, confirmadas e usadas ativamente em ataques.
-                * **Azul (restante da base):** O cenário teórico. O grande volume de vulnerabilidades registradas que, em sua esmagadora maioria, não representam perigo prático iminente.
+                #### Leitura prática:
+                Se o EPSS médio das vulnerabilidades no KEV for muito superior ao restante da base, isso indica que priorizar correções combinando KEV e EPSS é mais eficiente do que ordenar vulnerabilidades apenas pelo CVSS.
             """)
 
         q_perfil_estatistico = f"""
@@ -296,7 +295,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                         'media_score_cvss': 'Média do score CVSS', 
                         'status_exploracao': 'Grupo de análise'
                     },
-                    title="Diferença de Severidade Média (CVSS)",
+                    title="Severidade Média: KEV vs. Base Geral",
                     color='status_exploracao',
                     color_discrete_sequence=['#1f77b4', '#8b0000']
                 )
@@ -319,13 +318,14 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                         'media_probabilidade_epss': 'Média de probabilidade EPSS',
                         'status_exploracao': 'Grupo de análise'
                     },
-                    title="Diferença de Probabilidade Média (EPSS)",
+                    title="Probabilidade Média de Exploração: KEV vs. Base Geral",
                     color='status_exploracao',
                     color_discrete_sequence=['#1f77b4', '#8b0000'])
                 
                 # AJUSTE DE TRANSPARÊNCIA PARA O CARD
                 fig_epss_comp.update_layout(
-                    legend_itemclick="toggleothers"
+                    legend_itemclick="toggleothers",
+                    yaxis_tickformat=".0%"
                 )
                 apply_chart_layout(fig_epss_comp)
             
