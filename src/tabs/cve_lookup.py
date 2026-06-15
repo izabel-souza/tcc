@@ -66,11 +66,33 @@ def formatar_percentual_com_mensagem(valor, mensagem):
     return f"{float(valor) * 100:.1f}%"
 
 
-def buscar_cves(filtro_sql_alias, busca_cve=""):
+def buscar_cves(
+    filtro_sql_alias,
+    busca_cve="",
+    filtro_kev="Todos",
+    filtro_ransomware="Todos",
+    epss_minimo=0.0
+):
     condicao_busca = "1=1"
     if busca_cve:
         busca_sanitizada = busca_cve.strip().replace("'", "''")
         condicao_busca = f"c.id ILIKE '%{busca_sanitizada}%'"
+
+    condicao_kev = "1=1"
+    if filtro_kev == "Sim":
+        condicao_kev = "k.cve_id IS NOT NULL"
+    elif filtro_kev == "Não":
+        condicao_kev = "k.cve_id IS NULL"
+
+    condicao_ransomware = "1=1"
+    if filtro_ransomware == "Sim":
+        condicao_ransomware = "COALESCE(k.known_ransomware_usage, FALSE) = TRUE"
+    elif filtro_ransomware == "Não":
+        condicao_ransomware = "COALESCE(k.known_ransomware_usage, FALSE) = FALSE"
+
+    condicao_epss = "1=1"
+    if epss_minimo > 0:
+        condicao_epss = f"e.epss_score >= {epss_minimo}"
 
     query = f"""
         SELECT
@@ -126,6 +148,9 @@ def buscar_cves(filtro_sql_alias, busca_cve=""):
         LEFT JOIN mitre_tactics mta ON mtt.tactic_id = mta.id
         WHERE {filtro_sql_alias}
           AND {condicao_busca}
+          AND {condicao_kev}
+          AND {condicao_ransomware}
+          AND {condicao_epss}
         GROUP BY
             c.id,
             c.published_date,
@@ -389,7 +414,40 @@ def render_cve_lookup_tab(filtro_sql_alias):
             use_container_width=True
         )
 
-    df_cves = buscar_cves(filtro_sql_alias, busca_cve)
+    col_kev, col_ransomware, col_epss = st.columns(3)
+    with col_kev:
+        filtro_kev = st.selectbox(
+            "Presente no KEV",
+            options=["Todos", "Sim", "Não"],
+            key="consulta_cve_filtro_kev"
+        )
+    with col_ransomware:
+        filtro_ransomware = st.selectbox(
+            "Ransomware",
+            options=["Todos", "Sim", "Não"],
+            key="consulta_cve_filtro_ransomware"
+        )
+    with col_epss:
+        filtro_epss = st.selectbox(
+            "EPSS mínimo",
+            options=["Todos", "EPSS >= 1%", "EPSS >= 10%", "EPSS >= 50%"],
+            key="consulta_cve_filtro_epss"
+        )
+
+    epss_minimo = {
+        "Todos": 0.0,
+        "EPSS >= 1%": 0.01,
+        "EPSS >= 10%": 0.10,
+        "EPSS >= 50%": 0.50,
+    }[filtro_epss]
+
+    df_cves = buscar_cves(
+        filtro_sql_alias,
+        busca_cve,
+        filtro_kev,
+        filtro_ransomware,
+        epss_minimo
+    )
 
     if df_cves.empty:
         st.info("Nenhuma CVE encontrada para os filtros selecionados.")
@@ -404,7 +462,7 @@ def render_cve_lookup_tab(filtro_sql_alias):
         height=430,
         on_select="rerun",
         selection_mode="single-row",
-        key=f"consulta_cve_{filtro_sql_alias}_{busca_cve}",
+        key=f"consulta_cve_{filtro_sql_alias}_{busca_cve}_{filtro_kev}_{filtro_ransomware}_{filtro_epss}",
     )
 
     indice_selecionado = obter_linha_selecionada(evento)
