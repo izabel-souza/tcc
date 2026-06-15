@@ -6,6 +6,9 @@ from src.utils.components import apply_chart_layout, render_ransomware_icon
 
 #FUNCAO COM OS GRAFICOS
 def render_risk_tab(filtro_sql, filtro_estatistico_alias):
+    def add_section_spacing():
+        st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
+
     st.subheader("Inteligência de Ameaças e Priorização")
     
     # QUERY DO PERCENTUAL DE RANSOMWARE
@@ -23,16 +26,17 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     valor_ransomware = df_ransom_pct['porcentagem'].iloc[0] if not df_ransom_pct.empty else 0
 
     #RENDERIZA ICONE
+    st.markdown('<div style="height: 0.8rem;"></div>', unsafe_allow_html=True)
     render_ransomware_icon(valor_ransomware)
     
-    st.divider()
+    add_section_spacing()
 
     col_k1, col_k2 = st.columns(2)
 
     # RANKING DOS TOP VENDORS (EMPRESAS) COM MAIS VULNERABILIDADES EXPLORADAS COM LOGOS E BARRAS CUSTOMIZADAS
     with col_k1:
         with st.container(border=True):
-            st.subheader("Top Empresas Exploradas")
+            st.subheader("Top 10 Empresas com Exploração Ativa")
             
             vendor_q = f"""
                 SELECT 
@@ -78,7 +82,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     # RANKING DOS TOP PRODUTOS COM MAIS VULNERABILIDADES EXPLORADAS COM LOGOS DE SUA RESPECTIVA EMPRESA E BARRAS CUSTOMIZADAS
     with col_k2:
         with st.container(border=True):
-            st.subheader("Top Produtos Explorados")
+            st.subheader("Top 10 Produtos com Exploração Ativa")
 
             # QUERY
             prod_q = f"""
@@ -121,7 +125,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                     </div>
                     """, unsafe_allow_html=True)
             
-    st.divider()
+    add_section_spacing()
 
     # ==============================================================================
     # CASO DE USO 1: PRIORIZAÇÃO DE CORREÇÃO DE VULNERABILIDADES
@@ -131,47 +135,68 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: O risco real além da teoria.
+                ### Objetivo: priorizar vulnerabilidades pelo risco observado.
                         
-                A análise de ameaças não se limita à gravidade técnica da falha. Vulnerabilidades com notas altíssimas nem sempre são exploradas na prática, enquanto falhas menores podem se tornar alvos frequentes. Este gráfico cruza três dimensões para revelar o risco real:
+                Nem toda vulnerabilidade crítica representa a mesma urgência operacional. Este gráfico cruza a severidade técnica da CVE com a probabilidade de exploração estimada pelo EPSS e a presença no catálogo CISA KEV, ajudando a identificar quais falhas exigem resposta mais rápida.
 
-                * **Eixo X (CVSS):** A severidade técnica da vulnerabilidade.
-                * **Eixo Y (EPSS):** A probabilidade da falha ser explorada nos próximos 30 dias.
-                * **Indicador (KEV):** A confirmação de que a falha já está sendo explorada ativamente no mundo real.
+                * **Eixo X (CVSS):** severidade técnica da vulnerabilidade.
+                * **Eixo Y (EPSS):** probabilidade estimada de exploração.
+                * **Cor:** categoria de prioridade calculada a partir de CVSS, EPSS e KEV.
+                * **Símbolo:** indica se a CVE está presente no catálogo KEV.
 
-                #### Como classificar as ameaças:
-                1. **Prioridade máxima:** Alta severidade técnica e alta probabilidade de exploração. Exigem correção imediata.
-                2. **Risco subestimado:** Baixa severidade técnica, mas com alta taxa de ataques na prática.
-                3. **Atenção:** Alta severidade técnica, mas ainda sem evidências de ataques atuais. Exigem monitoramento de perto.
-                4. **Monitoramento padrão:** Baixo impacto e baixa probabilidade. Podem seguir o fluxo normal de atualização do sistema.
+                #### Como interpretar:
+                1. **Prioridade máxima:** vulnerabilidades presentes no KEV e com alta severidade ou probabilidade relevante de exploração.
+                2. **Risco subestimado:** vulnerabilidades presentes no KEV, mas que podem não parecer críticas apenas por CVSS ou EPSS.
+                3. **Atenção:** vulnerabilidades fora do KEV, mas com CVSS alto ou EPSS relevante.
+                4. **Monitoramento:** vulnerabilidades fora do KEV com menor severidade e menor probabilidade estimada de exploração.
             """)
 
         #QUERY
         query_prioridade = f"""
-            SELECT 
-                c.id,
-                c.cvss_base_score,
-                c.cvss_base_severity,
-                e.epss_score,
-                CASE 
-                    WHEN k.cve_id IS NOT NULL THEN TRUE 
-                    ELSE FALSE END as is_kev,
-                CASE 
-                    WHEN k.cve_id IS NOT NULL AND 
-                    (c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1) THEN 'Prioridade máxima'
-                    WHEN k.cve_id IS NOT NULL THEN 'Risco subestimado'
-                    WHEN c.cvss_base_score >= 7.0 AND e.epss_score < 0.1 THEN 'Atenção (vigilância)'
-                    ELSE 'Monitoramento'
-                END as categoria_prioridade
-            FROM cves c
-            JOIN epss_scores e ON c.id = e.cve_id
-            LEFT JOIN kev k ON c.id = k.cve_id
-            WHERE {filtro_sql}
+            WITH vulnerabilidades_classificadas AS (
+                SELECT
+                    c.id,
+                    c.cvss_base_score,
+                    c.cvss_base_severity,
+                    e.epss_score,
+                    CASE
+                        WHEN k.cve_id IS NOT NULL THEN TRUE
+                        ELSE FALSE
+                    END as is_kev,
+                    CASE
+                        WHEN k.cve_id IS NOT NULL AND
+                        (c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1) THEN 'Prioridade máxima'
+                        WHEN k.cve_id IS NOT NULL THEN 'Risco subestimado'
+                        WHEN c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1 THEN 'Atenção'
+                        ELSE 'Monitoramento'
+                    END as categoria_prioridade
+                FROM cves c
+                JOIN epss_scores e ON c.id = e.cve_id
+                LEFT JOIN kev k ON c.id = k.cve_id
+                WHERE {filtro_sql}
+            ),
+            amostra_balanceada AS (
+                SELECT
+                    *,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY categoria_prioridade
+                        ORDER BY is_kev DESC, e.epss_score DESC, cvss_base_score DESC
+                    ) as posicao_categoria
+                FROM vulnerabilidades_classificadas e
+            )
+            SELECT
+                id,
+                cvss_base_score,
+                cvss_base_severity,
+                epss_score,
+                is_kev,
+                categoria_prioridade
+            FROM amostra_balanceada
+            WHERE posicao_categoria <= 1250
             ORDER BY 
                 is_kev DESC, 
-                e.epss_score DESC, 
-                c.cvss_base_score DESC
-            LIMIT 5000
+                epss_score DESC, 
+                cvss_base_score DESC
         """
         df_prioridade = get_data(query_prioridade)
 
@@ -192,10 +217,10 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 color_discrete_map={
                     'Prioridade máxima': 'darkred',
                     'Risco subestimado': 'orange',
-                    'Atenção (vigilância)': 'yellow',
+                    'Atenção': 'yellow',
                     'Monitoramento': 'gray'
                 },
-                title="Correlação CVSS x EPSS (KEV)")
+                title="Relação entre CVSS, EPSS e KEV")
 
             # linhas de quadrante para facilitar a leitura
             fig_scatter.add_hline(
@@ -210,19 +235,19 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_scatter.update_layout(
-                legend_itemclick="toggleothers"
+                legend_itemclick="toggleothers",
+                xaxis=dict(dtick=1)
             )
             apply_chart_layout(fig_scatter, margin=dict(l=75, r=55, t=70, b=75))
 
             st.plotly_chart(fig_scatter, width='stretch', key=f"scatter_prioridade_{filtro_sql}")
 
-    st.divider()
+    add_section_spacing()
 
     # ==============================================================================
     # CASO DE USO 4: PERFIL DAS VULNERABILIDADES EXPLORADAS EM CAMPANHAS REAIS (KEV VS. GERAL)
     # ==============================================================================
-    with st.container(border=True): # envolve o gráfico no card
-
+    with st.container(border=True):
         st.subheader("Perfil das Vulnerabilidades Exploradas")
         st.write("Comparativo de médias: severidade técnica vs. probabilidade real")
 
@@ -261,55 +286,56 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
         if not df_perfil.empty:
             col_est1, col_est2 = st.columns(2)
 
-        # GRAFICO DE BARRAS 1 - Diferença de Severidade Média (CVSS)
-        with col_est1:
-            fig_cvss_comp = px.bar(
-                df_perfil,
-                x='status_exploracao',
-                y='media_score_cvss',
-                labels={
-                    'media_score_cvss': 'Média do score CVSS', 
-                    'status_exploracao': 'Grupo de análise'
-                },
-                title="Diferença de Severidade Média (CVSS)",
-                color='status_exploracao',
-                color_discrete_sequence=['#1f77b4', '#8b0000']
-            )
+            # GRAFICO DE BARRAS 1 - Diferença de Severidade Média (CVSS)
+            with col_est1:
+                fig_cvss_comp = px.bar(
+                    df_perfil,
+                    x='status_exploracao',
+                    y='media_score_cvss',
+                    labels={
+                        'media_score_cvss': 'Média do score CVSS', 
+                        'status_exploracao': 'Grupo de análise'
+                    },
+                    title="Diferença de Severidade Média (CVSS)",
+                    color='status_exploracao',
+                    color_discrete_sequence=['#1f77b4', '#8b0000']
+                )
 
-            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
-            fig_cvss_comp.update_layout(
-                legend_itemclick="toggleothers"
-            )
-            apply_chart_layout(fig_cvss_comp)
-        
-            st.plotly_chart(fig_cvss_comp, width='stretch', key=f"cvss_perfil_{filtro_sql}")
-
-        # GRAFICO DE BARRAS 2 - Diferença de Probabilidade Média (EPSS)
-        with col_est2:
-            fig_epss_comp = px.bar(
-                df_perfil,
-                x='status_exploracao',
-                y='media_probabilidade_epss',
-                labels={
-                    'media_probabilidade_epss': 'Média de probabilidade EPSS',
-                    'status_exploracao': 'Grupo de análise'
-                },
-                title="Diferença de Probabilidade Média (EPSS)",
-                color='status_exploracao',
-                color_discrete_sequence=['#1f77b4', '#8b0000'])
+                # AJUSTE DE TRANSPARÊNCIA PARA O CARD
+                fig_cvss_comp.update_layout(
+                    legend_itemclick="toggleothers"
+                )
+                apply_chart_layout(fig_cvss_comp)
             
-            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
-            fig_epss_comp.update_layout(
-                legend_itemclick="toggleothers"
-            )
-            apply_chart_layout(fig_epss_comp)
-        
-            st.plotly_chart(fig_epss_comp, width='stretch', key=f"epss_perfil_{filtro_sql}")
+                st.plotly_chart(fig_cvss_comp, width='stretch', key=f"cvss_perfil_{filtro_sql}")
 
-        st.divider()
+            # GRAFICO DE BARRAS 2 - Diferença de Probabilidade Média (EPSS)
+            with col_est2:
+                fig_epss_comp = px.bar(
+                    df_perfil,
+                    x='status_exploracao',
+                    y='media_probabilidade_epss',
+                    labels={
+                        'media_probabilidade_epss': 'Média de probabilidade EPSS',
+                        'status_exploracao': 'Grupo de análise'
+                    },
+                    title="Diferença de Probabilidade Média (EPSS)",
+                    color='status_exploracao',
+                    color_discrete_sequence=['#1f77b4', '#8b0000'])
+                
+                # AJUSTE DE TRANSPARÊNCIA PARA O CARD
+                fig_epss_comp.update_layout(
+                    legend_itemclick="toggleothers"
+                )
+                apply_chart_layout(fig_epss_comp)
+            
+                st.plotly_chart(fig_epss_comp, width='stretch', key=f"epss_perfil_{filtro_sql}")
 
+    add_section_spacing()
+
+    with st.container(border=True):
         # Comparação de Tipos de Fraqueza (CWE) - Top 5 de cada grupo
-        st.write("### Comparativo de Fraquezas (CWE): KEV vs. Geral")
+        st.subheader("Comparativo de Fraquezas (CWE): KEV vs. Geral")
         st.write("Perfil das vulnerabilidades que efetivamente viram problema no mundo real.")
 
         with st.expander("Guia de análise:"):
@@ -386,11 +412,28 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                             width='stretch',
                             key=f"cwe_perfil_bar_{filtro_estatistico_alias}")
 
-    st.divider()
+    add_section_spacing()
 
     # ==============================================================================
     # CASO DE USO 5: TENDÊNCIA TEMPORAL DA EXPLORAÇÃO (VOLUME VS. RISCO)
     # ==============================================================================
+    q_tendencia_temporal = f"""
+        SELECT 
+            EXTRACT(YEAR FROM c.published_date) as ano_publicacao,
+            COUNT(c.id) as quantidade_total_cves,
+            COUNT(CASE WHEN c.cvss_base_severity = 'CRITICAL' THEN 1 END) as quantidade_criticas,
+            COUNT(k.cve_id) as quantidade_exploradas_kev,
+            ROUND(AVG(e.epss_score)::numeric, 4) as media_probabilidade_epss
+        FROM cves c
+        LEFT JOIN kev k ON c.id = k.cve_id
+        LEFT JOIN epss_scores e ON c.id = e.cve_id
+        WHERE {filtro_estatistico_alias}
+        GROUP BY 1
+        ORDER BY 1
+    """
+
+    df_tendencia = get_data(q_tendencia_temporal)
+
     with st.container(border=True):
         st.subheader("Tendência Temporal: O Volume Implica em Mais Risco?")
 
@@ -407,24 +450,6 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 #### A conclusão prática:
                 Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para as equipes de segurança, isso destrói o mito de que é preciso corrigir tudo. A estratégia moderna não é tentar zerar a fila de vulnerabilidades, mas usar inteligência para atacar cirurgicamente apenas as falhas que os criminosos realmente usam.
             """)
-
-        # QUERY
-        q_tendencia_temporal = f"""
-            SELECT 
-                EXTRACT(YEAR FROM c.published_date) as ano_publicacao,
-                COUNT(c.id) as quantidade_total_cves,
-                COUNT(CASE WHEN c.cvss_base_severity = 'CRITICAL' THEN 1 END) as quantidade_criticas,
-                COUNT(k.cve_id) as quantidade_exploradas_kev,
-                ROUND(AVG(e.epss_score)::numeric, 4) as media_probabilidade_epss
-            FROM cves c
-            LEFT JOIN kev k ON c.id = k.cve_id
-            LEFT JOIN epss_scores e ON c.id = e.cve_id
-            WHERE {filtro_estatistico_alias}
-            GROUP BY 1
-            ORDER BY 1
-        """
-
-        df_tendencia = get_data(q_tendencia_temporal)
 
         # Grafico 1: Comparativo de Volume (Total vs. Criticas vs. KEV)
         if not df_tendencia.empty:
@@ -456,10 +481,11 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
             st.plotly_chart(fig_vol_evolucao, width='stretch', key=f"trend_vol_{filtro_estatistico_alias}")
 
-        st.divider()
+    add_section_spacing()
 
+    with st.container(border=True):
         # Grafico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
-        st.write("### Evolução da Probabilidade Média de Exploração (EPSS)")
+        st.subheader("Evolução da Probabilidade Média de Exploração (EPSS)")
 
         with st.expander("Guia de análise:"):
             st.markdown("""
@@ -474,21 +500,22 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para um gestor de segurança, isso justifica focar recursos na inteligência de ameaças (KEV/EPSS) em vez de tentar "corrigir tudo" apenas pelo volume.
             """)
 
-        fig_epss_trend = px.area(
-            df_tendencia,
-            x='ano_publicacao',
-            y='media_probabilidade_epss',
-            labels={
-                'ano_publicacao': 'Ano de publicação',
-                'media_probabilidade_epss': 'Média de probabilidade (EPSS)'
-            },
-            title="Tendência de Probabilidade Média de Exploração por Ano", 
-            color_discrete_sequence=['red']
-        )
-        
-        # AJUSTE DE TRANSPARÊNCIA PARA O CARD
-        fig_epss_trend.update_layout(
-        )
-        apply_chart_layout(fig_epss_trend)
-        
-        st.plotly_chart(fig_epss_trend, width='stretch', key=f"trend_epss_{filtro_estatistico_alias}")
+        if not df_tendencia.empty:
+            fig_epss_trend = px.area(
+                df_tendencia,
+                x='ano_publicacao',
+                y='media_probabilidade_epss',
+                labels={
+                    'ano_publicacao': 'Ano de publicação',
+                    'media_probabilidade_epss': 'Média de probabilidade (EPSS)'
+                },
+                title="Tendência de Probabilidade Média de Exploração por Ano", 
+                color_discrete_sequence=['red']
+            )
+            
+            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
+            fig_epss_trend.update_layout(
+            )
+            apply_chart_layout(fig_epss_trend)
+            
+            st.plotly_chart(fig_epss_trend, width='stretch', key=f"trend_epss_{filtro_estatistico_alias}")
