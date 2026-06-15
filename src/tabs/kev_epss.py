@@ -149,6 +149,9 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 2. **Risco subestimado:** vulnerabilidades presentes no KEV, mas que podem não parecer críticas apenas por CVSS ou EPSS.
                 3. **Atenção:** vulnerabilidades fora do KEV, mas com CVSS alto ou EPSS relevante.
                 4. **Monitoramento:** vulnerabilidades fora do KEV com menor severidade e menor probabilidade estimada de exploração.
+
+                #### Leitura prática:
+                Vulnerabilidades classificadas como prioridade máxima devem ser tratadas primeiro, pois combinam evidência de exploração real com severidade ou probabilidade relevante. Já os grupos de atenção e monitoramento ajudam a organizar o restante da fila sem depender apenas do score CVSS.
             """)
 
         #QUERY
@@ -210,7 +213,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 hover_data=['id', 'cvss_base_severity'],
                 labels={
                     'cvss_base_score': 'Severidade técnica (CVSS)',
-                    'epss_score': 'Probabilidade de exploração - EPSS (0-1)',
+                    'epss_score': 'Probabilidade de exploração (EPSS)',
                     'categoria_prioridade': 'Classificação de risco',
                     'is_kev': 'No KEV'
                 },
@@ -227,7 +230,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 y=0.5,
                 line_dash="dot",
                 line_color="red",
-                annotation_text="Alta probabilidade (EPSS > 0.5)")
+                annotation_text="Alta probabilidade (EPSS > 50%)")
             fig_scatter.add_vline(x=7.0,
                                 line_dash="dot",
                                 line_color="orange",
@@ -236,7 +239,8 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_scatter.update_layout(
                 legend_itemclick="toggleothers",
-                xaxis=dict(dtick=1)
+                xaxis=dict(dtick=1),
+                yaxis_tickformat=".0%"
             )
             apply_chart_layout(fig_scatter, margin=dict(l=75, r=55, t=70, b=75))
 
@@ -253,7 +257,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Comparar risco técnico e risco observado
+                ### Objetivo: comparar risco técnico e risco observado.
                 Esta análise compara vulnerabilidades presentes no catálogo KEV com o restante da base para verificar se falhas exploradas ativamente apresentam um perfil diferente.
 
                 #### Como interpretar:
@@ -336,18 +340,20 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     with st.container(border=True):
         # Comparação de Tipos de Fraqueza (CWE) - Top 5 de cada grupo
         st.subheader("Comparativo de Fraquezas (CWE): KEV vs. Geral")
-        st.write("Perfil das vulnerabilidades que efetivamente viram problema no mundo real.")
+        st.write("Comparação entre os tipos de fraqueza mais frequentes em vulnerabilidades exploradas e não exploradas.")
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-            ### Objetivo: 
-            Comparar o perfil das vulnerabilidades que entraram no catálogo KEV contra o restante da base de dados, validando a hipótese de que vulnerabilidades exploradas apresentam padrões distintos de severidade e probabilidade.
+            ### Objetivo: comparar os tipos de fraqueza mais recorrentes.
+            Esta análise compara os CWEs mais frequentes nas vulnerabilidades presentes no catálogo KEV com os CWEs mais frequentes no restante da base.
 
-            *  **Perfil de fraquezas (CWE):** Compara os tipos de erros de programação. Certas falhas (como injeção de código) aparecem com mais frequência no KEV do que na base geral, indicando que são os métodos preferidos para invasões.
+            #### Como interpretar:
+            1. **No catálogo KEV:** representa tipos de fraqueza associados a vulnerabilidades com exploração confirmada pela CISA.
+            2. **Fora do catálogo KEV:** representa os tipos de fraqueza mais comuns na base geral, sem confirmação de exploração ativa.
+            3. **Diferença entre os grupos:** ajuda a identificar se as vulnerabilidades exploradas seguem o mesmo padrão da base geral ou se certos tipos de falha aparecem com mais relevância no KEV.
 
-            #### Interpretação das cores:
-            - **Vermelho (no catálogo KEV):** O perfil das ameaças concretas e confirmadas pela CISA.
-            - **Azul (fora do catálogo):** O perfil do "ruído de fundo" da segurança (vulnerabilidades teóricas que ainda não foram ou não serão exploradas).
+            #### Leitura prática:
+            Quando determinados CWEs aparecem no KEV, eles podem indicar classes de erro que merecem atenção maior em processos de correção, revisão de código e gestão de risco.
             """)
 
         # QUERY
@@ -396,7 +402,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                     'identificador_fraqueza': 'Tipo de fraqueza (CWE)',
                     'quantidade_vulnerabilidades': 'Quantidade de CVEs'
                 },
-                title="Top 5 Fraquezas em cada Grupo (KEV vs. Restante da Base)",
+                title="Fraquezas Mais Frequentes: KEV vs. Base Geral",
                 color_discrete_map={
                     'No catálogo KEV': '#8b0000',
                     'Fora do catálogo KEV': '#1f77b4'
@@ -435,20 +441,23 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     df_tendencia = get_data(q_tendencia_temporal)
 
     with st.container(border=True):
-        st.subheader("Tendência Temporal: O Volume Implica em Mais Risco?")
+        st.subheader("Volume de Vulnerabilidades e Risco Real")
 
-        st.markdown("""Esta análise investiga se o crescimento anual no registro de vulnerabilidades reflete um aumento real na superfície de exploração ou se representa uma inflação de registros de baixo risco operacional.""")
+        st.markdown("Comparação anual entre volume de CVEs publicadas, vulnerabilidades críticas e presença no catálogo KEV.")
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Volume de falhas vs. Risco real
-                Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
+                ### Objetivo: comparar crescimento de volume e risco observado.
+                Esta análise verifica se o aumento anual no número de CVEs publicadas acompanha, na mesma proporção, o crescimento de vulnerabilidades críticas e de vulnerabilidades com exploração ativa registrada no KEV.
 
-                #### Como interpretar os gráficos:
-                *  **Volume Total vs. KEV:** Observe a diferença entre a linha azul (Total de CVEs) e a linha vermelha (KEV). Se a linha azul sobe rapidamente, mas a vermelha permanece estável, isso sugere que estamos descobrindo mais falhas "irrelevantes" ou teóricas do que novas ameaças práticas.
+                #### Como interpretar:
+                1. **Total de vulnerabilidades registradas:** indica o volume anual de CVEs publicadas.
+                2. **Vulnerabilidades de severidade crítica:** mostra quantas CVEs receberam classificação crítica pelo CVSS.
+                3. **Vulnerabilidades em exploração ativa (KEV):** representa CVEs com exploração confirmada pela CISA.
+                4. **Diferença entre as linhas:** quando o total cresce muito mais que o KEV, isso indica que o aumento de registros não necessariamente representa aumento proporcional de risco explorado.
 
-                #### A conclusão prática:
-                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para as equipes de segurança, isso destrói o mito de que é preciso corrigir tudo. A estratégia moderna não é tentar zerar a fila de vulnerabilidades, mas usar inteligência para atacar cirurgicamente apenas as falhas que os criminosos realmente usam.
+                #### Leitura prática:
+                O gráfico reforça que uma estratégia de correção baseada apenas no volume de CVEs pode gerar sobrecarga. Para priorização, é mais eficiente combinar volume, criticidade e evidência de exploração ativa.
             """)
 
         # Grafico 1: Comparativo de Volume (Total vs. Criticas vs. KEV)
@@ -462,7 +471,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                     'value': 'Quantidade de vulnerabilidades',
                     'variable': 'Métrica de análise'
                 },
-                title="Evolução Temporal: Volume Total vs. Severidade Crítica vs. Exploração Ativa", markers=True)
+                title="Evolução Anual: Volume, Criticidade e Exploração Ativa", markers=True)
 
             # renomeia as legendas no gráfico
             new_names = {
@@ -485,19 +494,21 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
 
     with st.container(border=True):
         # Grafico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
-        st.subheader("Evolução da Probabilidade Média de Exploração (EPSS)")
+        st.subheader("Tendência da Probabilidade de Exploração")
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Volume de falhas vs. Risco real
-                Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
+                ### Objetivo: avaliar a tendência do risco probabilístico.
+                Esta análise acompanha a média anual do EPSS das vulnerabilidades publicadas, indicando se a probabilidade estimada de exploração está aumentando ou diminuindo ao longo do tempo.
 
-                #### Como interpretar os gráficos:
-                
-                *  **Média EPSS (Gráfico de Área):** Este indicador mostra a "temperatura" da base. Se a probabilidade média (EPSS) está caindo enquanto o volume sobe, estamos vivendo uma inflação de registros de baixo risco. Se o EPSS sobe, as falhas novas estão vindo mais "armaenizáveis".
+                #### Como interpretar:
+                1. **EPSS médio anual:** representa a probabilidade média de exploração das CVEs publicadas em cada ano.
+                2. **Tendência de queda:** pode indicar aumento no volume de vulnerabilidades com baixa probabilidade estimada de exploração.
+                3. **Tendência de alta:** pode indicar maior concentração de vulnerabilidades com sinais de exploração ou maior interesse ofensivo.
+                4. **Anos recentes:** devem ser interpretados com cautela, pois CVEs novas podem ter menos sinais históricos disponíveis para o cálculo do EPSS.
 
-                #### O que isso prova:
-                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para um gestor de segurança, isso justifica focar recursos na inteligência de ameaças (KEV/EPSS) em vez de tentar "corrigir tudo" apenas pelo volume.
+                #### Leitura prática:
+                Quando o volume de CVEs cresce, mas o EPSS médio cai, a priorização baseada apenas em quantidade tende a gerar ruído. O EPSS ajuda a diferenciar vulnerabilidades com maior probabilidade de exploração daquelas que podem ser acompanhadas com menor urgência.
             """)
 
         if not df_tendencia.empty:
@@ -509,12 +520,13 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                     'ano_publicacao': 'Ano de publicação',
                     'media_probabilidade_epss': 'Média de probabilidade (EPSS)'
                 },
-                title="Tendência de Probabilidade Média de Exploração por Ano", 
+                title="Probabilidade Média de Exploração por Ano", 
                 color_discrete_sequence=['red']
             )
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_epss_trend.update_layout(
+                yaxis_tickformat=".0%"
             )
             apply_chart_layout(fig_epss_trend)
             
