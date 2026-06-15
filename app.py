@@ -311,7 +311,6 @@ st.sidebar.header("Filtros Globais")
 
 def limpar_filtros(data_inicial, data_final):
     st.session_state["filtro_periodo_publicacao"] = (data_inicial, data_final)
-    st.session_state["filtro_busca_cve"] = ""
     st.session_state["filtro_severidade_cvss"] = []
 
 
@@ -336,14 +335,6 @@ else:
 
 if data_inicio > data_fim:
     data_inicio, data_fim = data_fim, data_inicio
-
-# Filtro de CVE
-busca_cve = st.sidebar.text_input(
-    "Buscar CVE por ID",
-    placeholder="Ex: CVE-2024-1234",
-    key="filtro_busca_cve",
-    help="Digite o ID completo ou parcial para filtrar."
-)
 
 # Filtro de Severidade (CVSS)
 opcoes_severidade = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
@@ -380,15 +371,8 @@ else:
     condicao_sev = "1=1"
     condicao_sev_alias = "1=1"
 
-if busca_cve:
-    condicao_busca = f"id ILIKE '%{busca_cve}%'"
-    condicao_busca_alias = f"c.id ILIKE '%{busca_cve}%'"
-else:
-    condicao_busca = "1=1"
-    condicao_busca_alias = "1=1"
-
-filtro_sql = f"({condicao_ano}) AND ({condicao_sev}) AND ({condicao_busca})"
-filtro_sql_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias}) AND ({condicao_busca_alias})"
+filtro_sql = f"({condicao_ano}) AND ({condicao_sev})"
+filtro_sql_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias})"
 filtro_estatistico_alias = f"({condicao_ano_alias}) AND ({condicao_sev_alias})"
 
 

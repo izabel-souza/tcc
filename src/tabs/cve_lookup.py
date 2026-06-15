@@ -66,7 +66,12 @@ def formatar_percentual_com_mensagem(valor, mensagem):
     return f"{float(valor) * 100:.1f}%"
 
 
-def buscar_cves(filtro_sql_alias):
+def buscar_cves(filtro_sql_alias, busca_cve=""):
+    condicao_busca = "1=1"
+    if busca_cve:
+        busca_sanitizada = busca_cve.strip().replace("'", "''")
+        condicao_busca = f"c.id ILIKE '%{busca_sanitizada}%'"
+
     query = f"""
         SELECT
             c.id AS cve_id,
@@ -120,6 +125,7 @@ def buscar_cves(filtro_sql_alias):
         LEFT JOIN mitre_tactic_technique mtt ON mt.id = mtt.technique_id
         LEFT JOIN mitre_tactics mta ON mtt.tactic_id = mta.id
         WHERE {filtro_sql_alias}
+          AND {condicao_busca}
         GROUP BY
             c.id,
             c.published_date,
@@ -295,22 +301,28 @@ def renderizar_detalhe_cve(cve):
             st.markdown("#### Catálogo KEV/CISA")
             st.metric("Presente no KEV", formatar_booleano(cve["is_kev"]))
             st.metric("Ransomware", formatar_booleano(cve["known_ransomware_usage"]))
-            st.caption(f"Adicionada ao KEV: {formatar_data(cve['date_added'])}")
-            st.caption(f"Prazo CISA: {formatar_data(cve['due_date'])}")
+            if bool(cve["is_kev"]):
+                st.caption(f"Adicionada ao KEV: {formatar_data(cve['date_added'])}")
+                st.caption(f"Prazo CISA: {formatar_data(cve['due_date'])}")
 
-    col4, col5 = st.columns(2)
+    if bool(cve["is_kev"]):
+        col4, col5 = st.columns(2)
+    else:
+        col4 = None
+        col5 = st.container()
 
-    with col4:
-        with st.container(border=True):
-            st.markdown("#### Produto no KEV")
-            renderizar_lista_rotulada(
-                "Fornecedor/projeto KEV",
-                formatar_texto_kev(cve["vendor_project"], cve["is_kev"])
-            )
-            renderizar_lista_rotulada(
-                "Produto KEV",
-                formatar_texto_kev(cve["product"], cve["is_kev"])
-            )
+    if bool(cve["is_kev"]):
+        with col4:
+            with st.container(border=True):
+                st.markdown("#### Produto no KEV")
+                renderizar_lista_rotulada(
+                    "Fornecedor/projeto KEV",
+                    formatar_texto(cve["vendor_project"])
+                )
+                renderizar_lista_rotulada(
+                    "Produto KEV",
+                    formatar_texto(cve["product"])
+                )
 
     with col5:
         with st.container(border=True):
@@ -350,13 +362,34 @@ def renderizar_detalhe_cve(cve):
             renderizar_lista_rotulada("Subscore de impacto", formatar_decimal(cve["cvss_impact_score"]))
 
 
+def limpar_busca_cve():
+    st.session_state["consulta_cve_busca_id"] = ""
+
+
 def render_cve_lookup_tab(filtro_sql_alias):
     st.header("Consulta CVE")
     st.caption(
         "Consulte vulnerabilidades individuais combinando dados de CVE, CVSS, EPSS, KEV, CWE e MITRE ATT&CK."
     )
 
-    df_cves = buscar_cves(filtro_sql_alias)
+    col_busca, col_limpar = st.columns([0.96, 0.04], vertical_alignment="bottom")
+    with col_busca:
+        busca_cve = st.text_input(
+            "Buscar CVE por ID",
+            placeholder="Ex: CVE-2024-1234",
+            key="consulta_cve_busca_id",
+            help="Digite o ID completo ou parcial para filtrar a tabela abaixo."
+        )
+    with col_limpar:
+        st.button(
+            "×",
+            help="Limpar busca",
+            on_click=limpar_busca_cve,
+            disabled=not bool(st.session_state.get("consulta_cve_busca_id")),
+            use_container_width=True
+        )
+
+    df_cves = buscar_cves(filtro_sql_alias, busca_cve)
 
     if df_cves.empty:
         st.info("Nenhuma CVE encontrada para os filtros selecionados.")
@@ -371,7 +404,7 @@ def render_cve_lookup_tab(filtro_sql_alias):
         height=430,
         on_select="rerun",
         selection_mode="single-row",
-        key=f"consulta_cve_{filtro_sql_alias}",
+        key=f"consulta_cve_{filtro_sql_alias}_{busca_cve}",
     )
 
     indice_selecionado = obter_linha_selecionada(evento)
