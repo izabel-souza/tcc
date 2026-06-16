@@ -118,7 +118,7 @@ def render_mitre_tab(filtro_sql):
             else:
                 st.info("Nenhuma técnica mapeada para este filtro.")
 
-    st.divider()
+    st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
 
     # TREEMAP QUE MOSTRA A RELACAO ENTRE AS TOP 5 TECNICAS E SUAS FRAQUEZAS
     with st.container(border=True): 
@@ -171,7 +171,7 @@ def render_mitre_tab(filtro_sql):
         else:
             st.info("Dados insuficientes para o mapeamento detalhado com os filtros atuais.")
 
-    st.divider()
+    st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
 
     # ==============================================================================
     # CASO DE USO 3: RELAÇÃO ENTRE FRAQUEZAS (CWE) E TÁTICAS DE ATAQUE (MITRE)
@@ -268,7 +268,7 @@ def render_mitre_tab(filtro_sql):
 
             st.plotly_chart(fig_sankey, width='stretch')
 
-    st.divider()
+    st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
 
     #Rankings Específicos de Priorização
     col_m1, col_m2 = st.columns(2)

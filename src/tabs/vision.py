@@ -45,7 +45,7 @@ def render_vision_tab(
         pct_kev = (df_kpi['total_kev'][0] / total_cves) * 100
         render_kpi_card("Em Exploração (KEV)", f"{pct_kev:.1f}%")
 
-    st.divider()
+    st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
 

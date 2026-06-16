@@ -107,7 +107,7 @@ def render_cwe_tab(filtro_sql):
 
             st.plotly_chart(fig_cwe_c, width='stretch', key=f"cwe_c_{filtro_sql}")
 
-    st.divider()
+    st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
 
     # ==============================================================================
     # CASO DE USO 2: IDENTIFICAÇÃO DE FRAQUEZAS ASSOCIADAS A RISCO REAL
