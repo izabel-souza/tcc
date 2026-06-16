@@ -167,6 +167,13 @@ def render_mitre_tab(filtro_sql):
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)'
             )
+            fig_tree.update_traces(
+                hovertemplate=(
+                    "Item: %{label}<br>"
+                    "Grupo: %{parent}<br>"
+                    "Total de CVEs: %{value}<extra></extra>"
+                )
+            )
             st.plotly_chart(fig_tree, width='stretch', key=f"tree_{filtro_sql}")
         else:
             st.info("Dados insuficientes para o mapeamento detalhado com os filtros atuais.")
@@ -235,11 +242,13 @@ def render_mitre_tab(filtro_sql):
             sources = [node_map[row['origem']] for _, row in df_s.iterrows()]
             targets = [node_map[row['intermediario']] for _, row in df_s.iterrows()]
             values = df_s['qtd'].tolist()
+            link_customdata = [[row['origem'], row['intermediario']] for _, row in df_s.iterrows()]
 
             # Link 2: Técnica -> Tática
             sources.extend([node_map[row['intermediario']] for _, row in df_s.iterrows()])
             targets.extend([node_map[row['destino']] for _, row in df_s.iterrows()])
             values.extend(df_s['qtd'].tolist())
+            link_customdata.extend([[row['intermediario'], row['destino']] for _, row in df_s.iterrows()])
 
             # Cores baseadas na sua paleta: Azul para Técnicas, Vermelho para Táticas
             node_colors = []
@@ -251,10 +260,17 @@ def render_mitre_tab(filtro_sql):
             fig_sankey = go.Figure(data=[go.Sankey(
                 node=dict(
                     pad=15, thickness=20, line=dict(color="black", width=0.5),
-                    label=nodes, color=node_colors
+                    label=nodes, color=node_colors,
+                    hovertemplate="Nó: %{label}<extra></extra>"
                 ),
                 link=dict(
                     source=sources, target=targets, value=values,
+                    customdata=link_customdata,
+                    hovertemplate=(
+                        "Origem: %{customdata[0]}<br>"
+                        "Destino: %{customdata[1]}<br>"
+                        "Quantidade: %{value}<extra></extra>"
+                    ),
                     color="rgba(255, 255, 255, 0.1)" # Links sutis e transparentes
                 )
             )])
@@ -309,6 +325,12 @@ def render_mitre_tab(filtro_sql):
             fig_tech_crit.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
             )
+            fig_tech_crit.update_traces(
+                hovertemplate=(
+                    "Técnica de ataque: %{y}<br>"
+                    "Quantidade de vulnerabilidades críticas: %{x}<extra></extra>"
+                )
+            )
             apply_chart_layout(fig_tech_crit)
         
             st.plotly_chart(fig_tech_crit, width='stretch', key=f"mitre_crit_{filtro_sql}")
@@ -350,6 +372,12 @@ def render_mitre_tab(filtro_sql):
             
             fig_tac_kev.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
+            )
+            fig_tac_kev.update_traces(
+                hovertemplate=(
+                    "Tática do atacante: %{y}<br>"
+                    "Quantidade no catálogo KEV: %{x}<extra></extra>"
+                )
             )
             apply_chart_layout(fig_tac_kev)
 
