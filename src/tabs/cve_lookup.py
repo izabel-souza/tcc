@@ -143,7 +143,7 @@ def buscar_cves(
         LEFT JOIN cve_cwe_mapping ccm ON c.id = ccm.cve_id
         LEFT JOIN cwes cw ON ccm.cwe_id = cw.id
         LEFT JOIN cwe_mitre_mapping cmm ON cw.id = cmm.cwe_id
-        LEFT JOIN mitre_techniques mt ON cmm.mitre_id = mt.id
+        LEFT JOIN mitre_techniques mt ON (mt.id = cmm.mitre_id OR mt.id = 'T' || cmm.mitre_id)
         LEFT JOIN mitre_tactic_technique mtt ON mt.id = mtt.technique_id
         LEFT JOIN mitre_tactics mta ON mtt.tactic_id = mta.id
         WHERE {filtro_sql_alias}
@@ -292,8 +292,8 @@ def renderizar_detalhe_cve(cve):
         col2.metric("Publicação", formatar_data(cve["published_date"]))
         col3.metric("Última modificação", formatar_data(cve["last_modified_date"]))
         col4, col5 = st.columns(2)
-        col4.metric("Status NVD", formatar_texto(cve["vuln_status"]))
-        col5.metric("Tags CVE", formatar_tags(cve["cve_tags"]))
+        col4.metric("Status na NVD", formatar_texto(cve["vuln_status"]))
+        col5.metric("Tags da CVE", formatar_tags(cve["cve_tags"]))
         st.markdown("#### Descrição")
         st.write(descricao)
 
@@ -325,7 +325,12 @@ def renderizar_detalhe_cve(cve):
         with st.container(border=True):
             st.markdown("#### Catálogo KEV/CISA")
             st.metric("Presente no KEV", formatar_booleano(cve["is_kev"]))
-            st.metric("Ransomware", formatar_booleano(cve["known_ransomware_usage"]))
+            st.metric(
+                "Ransomware",
+                formatar_booleano(cve["known_ransomware_usage"])
+                if bool(cve["is_kev"])
+                else "Não aplicável ao KEV"
+            )
             if bool(cve["is_kev"]):
                 st.caption(f"Adicionada ao KEV: {formatar_data(cve['date_added'])}")
                 st.caption(f"Prazo CISA: {formatar_data(cve['due_date'])}")
