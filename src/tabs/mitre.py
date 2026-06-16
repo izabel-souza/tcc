@@ -19,7 +19,7 @@ def render_mitre_tab(filtro_sql):
     with c1:
         with st.container(border=True):
 
-            st.subheader("Top 10 Técnicas Mais Utilizadas")
+            st.subheader("Top 10 Técnicas Mais Associadas")
             query_tech = f"""
                 SELECT 
                     t.name AS tecnica, 
@@ -53,6 +53,12 @@ def render_mitre_tab(filtro_sql):
                 fig_tech.update_layout(
                     yaxis={'categoryorder': 'total ascending'},
                 )
+                fig_tech.update_traces(
+                    hovertemplate=(
+                        "Técnica MITRE: %{y}<br>"
+                        "Quantidade: %{x}<extra></extra>"
+                    )
+                )
                 apply_chart_layout(fig_tech)
 
                 st.plotly_chart(fig_tech, width='stretch', key=f"tech_{filtro_sql}")
@@ -63,7 +69,7 @@ def render_mitre_tab(filtro_sql):
     # Grafico Top 10 taticas
     with c2:
         with st.container(border=True):
-            st.subheader("Top 10 Táticas Mais Reportadas")
+            st.subheader("Top 10 Táticas Mais Associadas")
 
             query_taticas = f"""
                 SELECT 
@@ -99,6 +105,12 @@ def render_mitre_tab(filtro_sql):
 
                 fig_taticas.update_layout(
                     yaxis={'categoryorder': 'total ascending'},
+                )
+                fig_taticas.update_traces(
+                    hovertemplate=(
+                        "Tática MITRE: %{y}<br>"
+                        "Quantidade: %{x}<extra></extra>"
+                    )
                 )
                 apply_chart_layout(fig_taticas)
 
