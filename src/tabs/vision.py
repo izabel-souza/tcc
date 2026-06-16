@@ -1,6 +1,7 @@
 # --- IMPORTS ---
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 from src.utils.database import get_data
 from src.utils.components import apply_chart_layout, render_kpi_card
 
@@ -13,6 +14,15 @@ def render_vision_tab(
     data_inicio=None,
     data_fim=None
 ):
+    rotulos_severidade = {
+        'CRITICAL': 'Critical',
+        'HIGH': 'High',
+        'MEDIUM': 'Medium',
+        'LOW': 'Low',
+        'NONE': 'None',
+        'Sem severidade': 'Sem severidade',
+    }
+
     st.subheader("Métricas Globais de Vulnerabilidades")
 
     # QUERY DOS KPIs
@@ -105,15 +115,18 @@ def render_vision_tab(
                 SELECT 
                     {periodo_sql} as periodo_publicacao,
                     {periodo_ordem_sql} as ordem_periodo,
-                    cvss_base_severity, 
+                    COALESCE(cvss_base_severity, 'Sem severidade') as cvss_base_severity, 
                     COUNT(id) as qtd
                 FROM cves 
-                WHERE {filtro_sql} AND cvss_base_severity IS NOT NULL
+                WHERE {filtro_sql}
                 GROUP BY 1, 2, 3
                 ORDER BY 2
             """
 
             df_timeline = get_data(timeline_query)
+            df_timeline["severidade_exibicao"] = df_timeline["cvss_base_severity"].map(
+                rotulos_severidade
+            ).fillna(df_timeline["cvss_base_severity"])
             categorias_periodo = df_timeline["periodo_publicacao"].drop_duplicates().tolist()
             tickvals_periodo = categorias_periodo
 
@@ -124,17 +137,19 @@ def render_vision_tab(
                 df_timeline, 
                 x='periodo_publicacao',
                 y='qtd', 
-                color='cvss_base_severity', 
+                color='severidade_exibicao', 
                 labels={
                     "qtd": "Quantidade de CVEs", 
                     "periodo_publicacao": eixo_x_label,
-                    'cvss_base_severity': 'Severidade CVSS'
+                    'severidade_exibicao': 'Severidade CVSS'
                 },
                 color_discrete_map={
-                    'CRITICAL': 'darkred', 
-                    'HIGH': 'red', 
-                    'MEDIUM': 'orange', 
-                    'LOW': 'yellow'
+                    'Critical': 'darkred', 
+                    'High': 'red', 
+                    'Medium': 'orange', 
+                    'Low': 'yellow',
+                    'None': '#7bea9c',
+                    'Sem severidade': '#94A3B8'
                 }
             )
             fig_bar.update_xaxes(
@@ -148,6 +163,13 @@ def render_vision_tab(
                 legend_itemclick="toggleothers",
                 xaxis=eixo_x_config
             )
+            fig_bar.update_traces(
+                hovertemplate=(
+                    f"{eixo_x_label}: %{{x}}<br>"
+                    "Severidade CVSS: %{fullData.name}<br>"
+                    "Quantidade de CVEs: %{y}<extra></extra>"
+                )
+            )
             apply_chart_layout(fig_bar)
             
             st.plotly_chart(fig_bar, width="stretch", key=f"bar_{filtro_sql}")
@@ -160,10 +182,10 @@ def render_vision_tab(
 
             query_base = f"""
                 SELECT 
-                    cvss_base_severity as severidade, 
+                    COALESCE(cvss_base_severity, 'Sem severidade') as severidade, 
                     COUNT(id) as qtd 
                 FROM cves 
-                WHERE cvss_base_severity IS NOT NULL AND {condicao_ano} 
+                WHERE {condicao_ano} 
                 GROUP BY 1
             """
 
@@ -178,25 +200,67 @@ def render_vision_tab(
                 df_display = df_base.copy()
 
             df_display['porcentagem_fixa'] = (df_display['qtd'] / total_global_periodo) * 100
+            df_display['qtd_formatada'] = df_display['qtd'].apply(lambda valor: f"{int(valor):,}".replace(",", "."))
+            df_display['porcentagem_formatada'] = df_display['porcentagem_fixa'].apply(lambda valor: f"{valor:.1f}%")
+            df_display["severidade_exibicao"] = df_display["severidade"].map(
+                rotulos_severidade
+            ).fillna(df_display["severidade"])
+            ordem_severidade = ["Critical", "High", "Medium", "Low", "None", "Sem severidade"]
+            cores_severidade = {
+                "Critical": "darkred",
+                "High": "red",
+                "Medium": "orange",
+                "Low": "yellow",
+                "None": "#7bea9c",
+                "Sem severidade": "#94A3B8",
+            }
+            df_display["ordem_severidade"] = df_display["severidade_exibicao"].apply(
+                lambda severidade: ordem_severidade.index(severidade)
+                if severidade in ordem_severidade
+                else len(ordem_severidade)
+            )
+            df_display = df_display.sort_values("ordem_severidade")
+            df_display["texto_fatia"] = df_display.apply(
+                lambda linha: f"<b>{linha['severidade_exibicao']}</b><br>{linha['porcentagem_formatada']}",
+                axis=1
+            )
+            df_display["texto_hover"] = df_display.apply(
+                lambda linha: (
+                    f"Severidade CVSS: {linha['severidade_exibicao']}<br>"
+                    f"Quantidade de CVEs: {linha['qtd_formatada']}<br>"
+                    f"Proporção no período: {linha['porcentagem_formatada']}"
+                ),
+                axis=1
+            )
 
             if not df_display.empty:
-                fig_pie = px.pie(df_display,
-                            values='qtd',
-                            names='severidade',
-                            custom_data=['porcentagem_fixa'],
-                            color='severidade',
-                            color_discrete_map={'CRITICAL': 'darkred', 'HIGH': 'red', 'MEDIUM': 'orange', 'LOW': 'yellow'},
-                            category_orders={"severidade": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"]}
+                fig_pie = go.Figure(
+                    data=[
+                        go.Pie(
+                            labels=df_display["severidade_exibicao"],
+                            values=df_display["qtd"],
+                            text=df_display["texto_fatia"],
+                            hovertext=df_display["texto_hover"],
+                            marker=dict(
+                                colors=[
+                                    cores_severidade.get(severidade, "#CBD5E1")
+                                    for severidade in df_display["severidade_exibicao"]
+                                ]
+                            ),
+                            sort=False,
+                            textinfo="text",
                         )
+                    ]
+                )
                 
                 fig_pie.update_traces(
-                    texttemplate="<b>%{label}</b><br>%{customdata[0]:.1f}%",
-                    hovertemplate="<b>%{label}</b><br>Qtd: %{value}<br>Prop. no período: %{customdata[0]:.1f}%"
+                    hovertemplate="%{hovertext}<extra></extra>"
                 )
 
                 fig_pie.update_layout(
                     legend_itemclick="toggleothers",
-                    legend_itemdoubleclick="toggle"
+                    legend_itemdoubleclick="toggle",
+                    legend_title_text="Severidade CVSS"
                 )
                 apply_chart_layout(fig_pie, margin=dict(l=45, r=45, t=45, b=45))
 

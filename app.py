@@ -341,12 +341,22 @@ if data_inicio > data_fim:
     data_inicio, data_fim = data_fim, data_inicio
 
 # Filtro de Severidade (CVSS)
-opcoes_severidade = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+SEM_SEVERIDADE_CVSS = "Sem severidade"
+opcoes_severidade = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE', SEM_SEVERIDADE_CVSS]
+rotulos_severidade = {
+    'CRITICAL': 'Critical',
+    'HIGH': 'High',
+    'MEDIUM': 'Medium',
+    'LOW': 'Low',
+    'NONE': 'None',
+    SEM_SEVERIDADE_CVSS: SEM_SEVERIDADE_CVSS,
+}
 severidades_selecionadas = st.sidebar.multiselect(
     "Severidade CVSS",
     options=opcoes_severidade,
     default=[],
     key="filtro_severidade_cvss",
+    format_func=lambda severidade: rotulos_severidade.get(severidade, severidade),
     placeholder="Todas as severidades")
 
 st.sidebar.markdown('<div style="height: 0.55rem;"></div>', unsafe_allow_html=True)
@@ -368,9 +378,24 @@ else:
     condicao_ano_alias = f"c.published_date::date BETWEEN '{data_inicio.isoformat()}' AND '{data_fim.isoformat()}'"
 
 if severidades_selecionadas:
-    sev_formatadas = "', '".join(severidades_selecionadas)
-    condicao_sev = f"cvss_base_severity IN ('{sev_formatadas}')"
-    condicao_sev_alias = f"c.cvss_base_severity IN ('{sev_formatadas}')"
+    severidades_com_valor = [
+        severidade for severidade in severidades_selecionadas
+        if severidade != SEM_SEVERIDADE_CVSS
+    ]
+    condicoes_severidade = []
+    condicoes_severidade_alias = []
+
+    if severidades_com_valor:
+        sev_formatadas = "', '".join(severidades_com_valor)
+        condicoes_severidade.append(f"cvss_base_severity IN ('{sev_formatadas}')")
+        condicoes_severidade_alias.append(f"c.cvss_base_severity IN ('{sev_formatadas}')")
+
+    if SEM_SEVERIDADE_CVSS in severidades_selecionadas:
+        condicoes_severidade.append("cvss_base_severity IS NULL")
+        condicoes_severidade_alias.append("c.cvss_base_severity IS NULL")
+
+    condicao_sev = " OR ".join(condicoes_severidade)
+    condicao_sev_alias = " OR ".join(condicoes_severidade_alias)
 else:
     condicao_sev = "1=1"
     condicao_sev_alias = "1=1"
