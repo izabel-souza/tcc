@@ -122,7 +122,23 @@ def render_mitre_tab(filtro_sql):
 
     # TREEMAP QUE MOSTRA A RELACAO ENTRE AS TOP 5 TECNICAS E SUAS FRAQUEZAS
     with st.container(border=True): 
-        st.subheader("Mapeamento Detalhado: Relação Técnica ➔ Fraqueza (CWE)")
+        st.subheader("Mapa de Técnicas MITRE e Fraquezas CWE")
+        st.markdown("Distribuição das principais fraquezas de software associadas às técnicas mais recorrentes.")
+
+        with st.expander("Guia de análise:"):
+            st.markdown("""
+                ### Objetivo: relacionar técnicas MITRE às fraquezas de software.
+                Esta análise mostra quais CWEs aparecem com maior frequência dentro das principais técnicas MITRE associadas às vulnerabilidades da base.
+
+                #### Como interpretar:
+                1. **Blocos principais:** representam técnicas MITRE.
+                2. **Sub-blocos:** representam CWEs associados a cada técnica.
+                3. **Tamanho do bloco:** indica a quantidade de CVEs relacionadas.
+                4. **Cor:** reforça a concentração de vulnerabilidades em cada relação técnica-fraqueza.
+
+                #### Leitura prática:
+                Técnicas com grande concentração em poucas CWEs indicam pontos de correção mais estratégicos. Ao reduzir uma fraqueza recorrente, é possível diminuir a exposição a técnicas de ataque associadas.
+            """)
         
         query_tree = f"""
             WITH TopTechniques AS (
@@ -135,19 +151,35 @@ def render_mitre_tab(filtro_sql):
                 GROUP BY t.id
                 ORDER BY COUNT(DISTINCT c.id) DESC
                 LIMIT 5
+            ),
+            TechniqueWeaknesses AS (
+                SELECT 
+                    t.name AS tecnica,
+                    cw.id || ' - ' || SUBSTRING(cw.description, 1, 30) || '...' AS fraqueza,
+                    cw.id AS identificador_cwe,
+                    cw.description AS descricao_cwe,
+                    COUNT(DISTINCT c.id) AS qtd_cves,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY t.name
+                        ORDER BY COUNT(DISTINCT c.id) DESC
+                    ) AS posicao_cwe
+                FROM cves c
+                JOIN cve_cwe_mapping ccm ON c.id = ccm.cve_id
+                JOIN cwes cw ON ccm.cwe_id = cw.id
+                JOIN cwe_mitre_mapping cmm ON cw.id = cmm.cwe_id
+                JOIN mitre_techniques t ON (t.id = cmm.mitre_id OR t.id = 'T' || cmm.mitre_id)
+                WHERE t.id IN (SELECT id FROM TopTechniques) AND {filtro_sql}
+                GROUP BY 1, 2, 3, 4
             )
-            SELECT 
-                t.name AS tecnica,
-                cw.id || ' - ' || SUBSTRING(cw.description, 1, 30) || '...' AS fraqueza,
-                COUNT(DISTINCT c.id) AS qtd_cves
-            FROM cves c
-            JOIN cve_cwe_mapping ccm ON c.id = ccm.cve_id
-            JOIN cwes cw ON ccm.cwe_id = cw.id
-            JOIN cwe_mitre_mapping cmm ON cw.id = cmm.cwe_id
-            JOIN mitre_techniques t ON (t.id = cmm.mitre_id OR t.id = 'T' || cmm.mitre_id)
-            WHERE t.id IN (SELECT id FROM TopTechniques) AND {filtro_sql}
-            GROUP BY 1, 2
-            ORDER BY 3 DESC
+            SELECT
+                tecnica,
+                fraqueza,
+                identificador_cwe,
+                descricao_cwe,
+                qtd_cves
+            FROM TechniqueWeaknesses
+            WHERE posicao_cwe <= 5
+            ORDER BY qtd_cves DESC
         """
         
         df_tree = get_data(query_tree)
@@ -160,17 +192,24 @@ def render_mitre_tab(filtro_sql):
                 template="plotly_dark",
                 color='qtd_cves',
                 color_continuous_scale='Reds',
+                custom_data=['identificador_cwe', 'descricao_cwe'],
                 labels={'qtd_cves': 'Total de CVEs', 'tecnica': 'Técnica', 'fraqueza': 'Fraqueza (CWE)'}
             )
             fig_tree.update_layout(
-                margin=dict(t=45, l=25, r=25, b=25),
+                title={
+                    "text": "Distribuição CWE por Técnica MITRE",
+                    "x": 0.02,
+                    "xanchor": "left",
+                },
+                margin=dict(t=65, l=25, r=25, b=25),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)'
             )
             fig_tree.update_traces(
                 hovertemplate=(
-                    "Item: %{label}<br>"
-                    "Grupo: %{parent}<br>"
+                    "Técnica MITRE: %{parent}<br>"
+                    "CWE: %{customdata[0]}<br>"
+                    "Nome: %{customdata[1]}<br>"
                     "Total de CVEs: %{value}<extra></extra>"
                 )
             )
@@ -187,12 +226,10 @@ def render_mitre_tab(filtro_sql):
 
         st.subheader("Defesa Baseada em Ameaças: Do Erro ao Comportamento")
         st.markdown("""
-        Esta análise conecta a causa raiz técnica (CWE) ao objetivo tático do adversário. 
-        Permite entender quais falhas de software facilitam comportamentos específicos de ataque.
+        Esta análise conecta a causa raiz técnica das vulnerabilidades aos comportamentos ofensivos do MITRE ATT&CK,
+        ajudando a identificar quais fraquezas de software facilitam determinados objetivos de ataque.
         """)
         
-        st.subheader("Fluxograma de Exploração (CWE ➔ Técnica ➔ Tática)")
-
         with st.expander("Guia de análise: "):
             st.markdown("""
                 ### Objetivo: visualizar a ponte entre erro e comportamento.
@@ -283,7 +320,7 @@ def render_mitre_tab(filtro_sql):
             )])
 
             fig_sankey.update_layout(
-                title_text="Fluxo entre Fraquezas, Técnicas e Táticas",
+                title_text="Fluxograma de Exploração (CWE → Técnica → Tática)",
                 font_size=12, template="plotly_dark",
                 height=600
             )
