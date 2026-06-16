@@ -17,14 +17,16 @@ def render_cwe_tab(filtro_sql):
             st.subheader("Top 10 CWEs")
             q_cwe = f"""
                 SELECT 
+                    cw.id as identificador_cwe,
+                    cw.description as descricao_completa,
                     cw.id || ' - ' || SUBSTRING(cw.description, 1, 30) || '...' as fraqueza, 
                     COUNT(m.cve_id) as qtd
                 FROM cve_cwe_mapping m 
                 JOIN cwes cw ON m.cwe_id = cw.id 
                 JOIN cves c ON m.cve_id = c.id
                 WHERE {filtro_sql} 
-                GROUP BY 1 
-                ORDER BY 2 DESC 
+                GROUP BY 1, 2, 3
+                ORDER BY 4 DESC 
                 LIMIT 10
             """
 
@@ -39,6 +41,7 @@ def render_cwe_tab(filtro_sql):
                     'fraqueza': 'Fraqueza',
                     'qtd': 'Quantidade'
                 },
+                custom_data=['identificador_cwe', 'descricao_completa'],
                 color_discrete_sequence=['#1f77b4']
             )
 
@@ -48,6 +51,13 @@ def render_cwe_tab(filtro_sql):
             )
 
             fig_cwe.update_layout(yaxis={'categoryorder': 'total ascending'})
+            fig_cwe.update_traces(
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Nome: %{customdata[1]}<br>"
+                    "Quantidade: %{x}<extra></extra>"
+                )
+            )
             apply_chart_layout(fig_cwe)
             st.plotly_chart(fig_cwe, width='stretch', key=f"cwe_g_{filtro_sql}")
 
@@ -57,14 +67,16 @@ def render_cwe_tab(filtro_sql):
             st.subheader("Top 10 CWEs em Vulnerabilidades Críticas")
             q_cwe_c = f"""
                 SELECT 
+                    cw.id as identificador_cwe,
+                    cw.description as descricao_completa,
                     cw.id || ' - ' || SUBSTRING(cw.description, 1, 40) || '...' as fraqueza, 
                     COUNT(m.cve_id) as qtd
                 FROM cve_cwe_mapping m 
                 JOIN cwes cw ON m.cwe_id = cw.id 
                 JOIN cves c ON m.cve_id = c.id
                 WHERE c.cvss_base_severity = 'CRITICAL' AND {filtro_sql} 
-                GROUP BY 1 
-                ORDER BY 2 DESC 
+                GROUP BY 1, 2, 3
+                ORDER BY 4 DESC 
                 LIMIT 10
             """
 
@@ -78,10 +90,18 @@ def render_cwe_tab(filtro_sql):
                                'fraqueza': 'Fraqueza',
                                'qtd': 'Quantidade'
                            },
+                           custom_data=['identificador_cwe', 'descricao_completa'],
                            color_discrete_sequence=['darkred'])
             
             fig_cwe_c.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
+            )
+            fig_cwe_c.update_traces(
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Nome: %{customdata[1]}<br>"
+                    "Quantidade: %{x}<extra></extra>"
+                )
             )
             apply_chart_layout(fig_cwe_c)
 
