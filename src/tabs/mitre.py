@@ -195,25 +195,23 @@ def render_mitre_tab(filtro_sql):
 
         with st.expander("Guia de análise: "):
             st.markdown("""
-                ### Objetivo: Visualizar a ponte entre erro e comportamento
-                Este diagrama de **Sankey** revela como uma falha técnica no código se transforma em uma capacidade de ataque para o adversário. O fluxo segue a lógica: **Onde o erro nasce ➔ Como ele é usado ➔ O que o atacante quer.**
+                ### Objetivo: visualizar a ponte entre erro e comportamento.
+                Este diagrama de Sankey mostra como uma fraqueza técnica de software pode se relacionar com técnicas e táticas do MITRE ATT&CK. O fluxo segue a lógica: onde o erro nasce, como ele pode ser explorado e qual objetivo ofensivo ele pode facilitar.
 
-                #### Como ler o fluxo (Da esquerda para a direita):
-                1.  **CWE (amarelo - origem):** Representa a fraqueza de software (ex: estouro de buffer). É a causa raiz técnica.
-                2.  **Técnica (azul - meio):** Representa o método do **MITRE ATT&CK** utilizado para explorar aquela fraqueza (ex: execução de API).
-                3.  **Tática (vermelho - destino):** Representa o objetivo final do atacante (ex: persistência ou exfiltração de dados).
+                #### Como interpretar:
+                1. **CWE:** representa a fraqueza de software, ou seja, a causa raiz técnica.
+                2. **Técnica:** representa o método de ataque associado no MITRE ATT&CK.
+                3. **Tática:** representa o objetivo do adversário, como execução, persistência ou acesso a credenciais.
+                4. **Espessura do fluxo:** quanto maior a conexão, maior é a quantidade de vulnerabilidades associadas àquele caminho.
 
-                #### O que observar:
-                * **Espessura das barras:** Quanto mais larga a conexão, maior é o volume de vulnerabilidades que seguem aquele caminho específico.
-                * **Convergência:** Observe como diferentes tipos de erros de programação (CWEs) podem convergir para uma mesma técnica de ataque, mostrando a "versatilidade" de certas ferramentas dos invasores.
-
-                #### Valor para a defesa:
-                Este gráfico sustenta o conceito de **defesa orientada por ameaças**. Ao entender qual tática é mais alimentada por certas fraquezas, a organização pode priorizar correções de código que "cortam o fluxo" de múltiplos comportamentos de ataque simultaneamente.
+                #### Leitura prática:
+                O fluxo ajuda a priorizar fraquezas que alimentam múltiplas técnicas ou táticas relevantes. Isso permite direcionar ações de correção e prevenção para pontos que reduzem mais de um caminho possível de ataque.
             """)
 
         query_sankey = f"""
             SELECT 
                 cw.id AS origem,
+                cw.description AS origem_descricao,
                 tec.name AS intermediario,
                 tac.name AS destino,
                 COUNT(DISTINCT c.id) AS qtd
@@ -225,9 +223,9 @@ def render_mitre_tab(filtro_sql):
             JOIN cve_cwe_mapping ccm ON cw.id = ccm.cwe_id
             JOIN cves c ON ccm.cve_id = c.id
             WHERE {filtro_sql}
-            GROUP BY 1, 2, 3
+            GROUP BY 1, 2, 3, 4
             ORDER BY qtd DESC
-            LIMIT 50
+            LIMIT 30
         """
 
         df_s = get_data(query_sankey)
@@ -236,13 +234,21 @@ def render_mitre_tab(filtro_sql):
             # Criando listas únicas de nós para mapeamento de índices
             nodes = list(set(df_s['origem']) | set(df_s['intermediario']) | set(df_s['destino']))
             node_map = {name: i for i, name in enumerate(nodes)}
+            cwe_descriptions = dict(zip(df_s['origem'], df_s['origem_descricao']))
+            node_customdata = [
+                cwe_descriptions.get(node, node)
+                for node in nodes
+            ]
 
             # Construindo as conexões (Links)
             # Link 1: CWE -> Técnica
             sources = [node_map[row['origem']] for _, row in df_s.iterrows()]
             targets = [node_map[row['intermediario']] for _, row in df_s.iterrows()]
             values = df_s['qtd'].tolist()
-            link_customdata = [[row['origem'], row['intermediario']] for _, row in df_s.iterrows()]
+            link_customdata = [
+                [f"{row['origem']} - {row['origem_descricao']}", row['intermediario']]
+                for _, row in df_s.iterrows()
+            ]
 
             # Link 2: Técnica -> Tática
             sources.extend([node_map[row['intermediario']] for _, row in df_s.iterrows()])
@@ -261,7 +267,8 @@ def render_mitre_tab(filtro_sql):
                 node=dict(
                     pad=15, thickness=20, line=dict(color="black", width=0.5),
                     label=nodes, color=node_colors,
-                    hovertemplate="Nó: %{label}<extra></extra>"
+                    customdata=node_customdata,
+                    hovertemplate="Nó: %{label}<br>Descrição: %{customdata}<extra></extra>"
                 ),
                 link=dict(
                     source=sources, target=targets, value=values,
@@ -276,7 +283,7 @@ def render_mitre_tab(filtro_sql):
             )])
 
             fig_sankey.update_layout(
-                title_text="Fluxo de Disseminação de Vulnerabilidades",
+                title_text="Fluxo entre Fraquezas, Técnicas e Táticas",
                 font_size=12, template="plotly_dark",
                 height=600
             )
@@ -297,14 +304,18 @@ def render_mitre_tab(filtro_sql):
             q_tech_crit = f"""
                 SELECT 
                     tec.name AS nome_tecnica,
+                    CASE 
+                        WHEN LENGTH(tec.name) > 28 THEN SUBSTRING(tec.name, 1, 28) || '...'
+                        ELSE tec.name
+                    END AS nome_tecnica_eixo,
                     COUNT(DISTINCT c.id) AS quantidade_vulnerabilidades
                 FROM mitre_techniques tec
                 JOIN cwe_mitre_mapping cmm ON (tec.id = cmm.mitre_id OR tec.id = 'T' || cmm.mitre_id)
                 JOIN cve_cwe_mapping ccm ON cmm.cwe_id = ccm.cwe_id
                 JOIN cves c ON ccm.cve_id = c.id
                 WHERE c.cvss_base_severity = 'CRITICAL' AND {filtro_sql}
-                GROUP BY 1
-                ORDER BY 2 DESC LIMIT 10
+                GROUP BY 1, 2
+                ORDER BY 3 DESC LIMIT 10
             """
 
             df_tech_crit = get_data(q_tech_crit)
@@ -312,22 +323,25 @@ def render_mitre_tab(filtro_sql):
             fig_tech_crit = px.bar(
                 df_tech_crit,
                 x='quantidade_vulnerabilidades',
-                y='nome_tecnica',
+                y='nome_tecnica_eixo',
                 orientation='h',
                 labels={
                     'quantidade_vulnerabilidades': 'Quantidade de vulnerabilidades críticas',
-                    'nome_tecnica': 'Técnica de ataque'
+                    'nome_tecnica_eixo': 'Técnica de ataque'
                 },
+                custom_data=['nome_tecnica'],
                 color='quantidade_vulnerabilidades',
                 color_continuous_scale='Reds'
             )
 
             fig_tech_crit.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
+                xaxis=dict(tickangle=0, nticks=5, tickformat="~s"),
+                coloraxis_colorbar=dict(title="Quantidade"),
             )
             fig_tech_crit.update_traces(
                 hovertemplate=(
-                    "Técnica de ataque: %{y}<br>"
+                    "Técnica de ataque: %{customdata[0]}<br>"
                     "Quantidade de vulnerabilidades críticas: %{x}<extra></extra>"
                 )
             )
@@ -338,7 +352,7 @@ def render_mitre_tab(filtro_sql):
     with col_m2:
         with st.container(border=True):
 
-            st.write("### Top 10 Táticas Associadas a Fraquezas Exploradas")
+            st.write("### Top 10 Táticas Associadas a Exploração Ativa")
             q_tac_kev = f"""
                 SELECT 
                     tac.name AS nome_tatica,
@@ -372,6 +386,7 @@ def render_mitre_tab(filtro_sql):
             
             fig_tac_kev.update_layout(
                 yaxis={'categoryorder': 'total ascending'},
+                coloraxis_colorbar=dict(title="Quantidade"),
             )
             fig_tac_kev.update_traces(
                 hovertemplate=(
