@@ -312,6 +312,10 @@ st.sidebar.header("Filtros Globais")
 def limpar_filtros(data_inicial, data_final):
     st.session_state["filtro_periodo_publicacao"] = (data_inicial, data_final)
     st.session_state["filtro_severidade_cvss"] = []
+    st.session_state["consulta_cve_busca_id"] = ""
+    st.session_state["consulta_cve_filtro_kev"] = "Todos"
+    st.session_state["consulta_cve_filtro_ransomware"] = "Todos"
+    st.session_state["consulta_cve_filtro_epss"] = "Todos"
 
 
 # Filtro de data de publicação
