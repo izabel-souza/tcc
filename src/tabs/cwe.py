@@ -113,49 +113,36 @@ def render_cwe_tab(filtro_sql):
     # CASO DE USO 2: IDENTIFICAÇÃO DE FRAQUEZAS ASSOCIADAS A RISCO REAL
     # ==============================================================================
     with st.container(border=True):
-        st.subheader("Análise de Fraquezas por Perspectivas de Risco")
+        st.subheader("Fraquezas Associadas a Risco Real")
 
         with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Identificar as falhas de programação mais perigosas
-                Este caso de uso investiga quais tipos de erros de desenvolvimento (**CWE**) estão por trás das vulnerabilidades mais exploradas no mundo real.
+                ### Objetivo: identificar fraquezas associadas a maior risco real.
+                Esta análise destaca classes de CWE relacionadas a exploração ativa ou maior probabilidade estimada de exploração, complementando os rankings gerais de frequência.
 
-                #### Como interpretar as 4 perspectivas:
-                1.  **Volume total:** Mostra quais falhas são mais comuns na base geral (ex: falhas de permissão ou gestão de memória).
-                2.  **Vulnerabilidades críticas:** Filtra as falhas que geram os maiores impactos teóricos (CVSS > 9.0).
-                3.  **Exploração ativa (KEV):** Esta é a visão mais importante para defesa. Revela quais erros de programação os atacantes **realmente conseguem explorar** hoje.
-                4.  **Maior média EPSS:** Identifica classes de falhas que, estatisticamente, têm maior chance de virarem um problema no futuro próximo.
+                #### Como interpretar:
+                1. **Exploração ativa (KEV):** mostra os tipos de fraqueza mais presentes em vulnerabilidades exploradas no mundo real.
+                2. **Maior média EPSS:** mostra os tipos de fraqueza com maior probabilidade média de exploração.
+                3. **Diferença em relação aos rankings gerais:** ajuda a separar fraquezas comuns de fraquezas que indicam maior risco operacional.
 
-                #### Valor:
-                Esta análise conecta a **segurança de aplicações (AppSec)** com a **inteligência de ameaças**. Ela permite provar que certas classes de fraqueza (como *Injection* ou *Broken Access Control*) concentram muito mais risco prático do que outras, mesmo que não sejam as mais numerosas no total.
+                #### Leitura prática:
+                Fraquezas que aparecem com destaque no KEV ou com EPSS médio elevado podem orientar políticas de desenvolvimento seguro, revisão de código, priorização de correções e ações preventivas.
             """)
+
+        st.markdown('<div style="height: 0.75rem;"></div>', unsafe_allow_html=True)
 
         # Seletor para abranger todo o escopo da ideia analítica
         opcao_analise = st.selectbox(
             "Selecione a perspectiva de análise das fraquezas:", [
-                "Mais frequentes (volume total)",
-                "Mais frequentes em vulnerabilidades críticas",
                 "Mais presentes em exploração ativa (KEV)",
                 "Maior média de probabilidade de exploração (EPSS)"
             ]
         )
 
+        st.markdown('<div style="height: 0.75rem;"></div>', unsafe_allow_html=True)
+
         # Lógica de consulta baseada na opção selecionada
-        if opcao_analise == "Mais frequentes (volume total)":
-            order_by = "total_vulnerabilidades DESC"
-            extra_filter = ""
-            y_axis = "total_vulnerabilidades"
-            label_y = "Total de vulnerabilidades"
-            titulo_grafico = "Top 10 Fraquezas por Volume Total de Registros"
-
-        elif opcao_analise == "Mais frequentes em vulnerabilidades críticas":
-            order_by = "total_vulnerabilidades DESC"
-            extra_filter = "AND c.cvss_base_severity = 'CRITICAL'"
-            y_axis = "total_vulnerabilidades"
-            label_y = "Quantidade de vulnerabilidades críticas"
-            titulo_grafico = "Top 10 Fraquezas em Vulnerabilidades de Severidade Crítica"
-
-        elif opcao_analise == "Mais presentes em exploração ativa (KEV)":
+        if opcao_analise == "Mais presentes em exploração ativa (KEV)":
             order_by = "quantidade_no_kev DESC"
             extra_filter = "AND k.cve_id IS NOT NULL"
             y_axis = "quantidade_no_kev"
@@ -166,13 +153,14 @@ def render_cwe_tab(filtro_sql):
             order_by = "media_probabilidade_epss DESC"
             extra_filter = ""
             y_axis = "media_probabilidade_epss"
-            label_y = "Média de probabilidade (EPSS)"
+            label_y = "Média EPSS"
             titulo_grafico = "Fraquezas com Maior Probabilidade Média de Exploração"
 
         #QUERY PARA METRICAS
         q_cwe_completa = f"""
             SELECT 
                 cw.id as identificador_cwe,
+                cw.description as descricao_completa,
                 SUBSTRING(cw.description, 1, 40) || '...' as descricao_fraqueza,
                 COUNT(DISTINCT c.id) as total_vulnerabilidades,
                 COUNT(DISTINCT k.cve_id) as quantidade_no_kev,
@@ -183,7 +171,7 @@ def render_cwe_tab(filtro_sql):
             LEFT JOIN kev k ON c.id = k.cve_id
             LEFT JOIN epss_scores e ON c.id = e.cve_id
             WHERE {filtro_sql} {extra_filter}
-            GROUP BY 1, 2
+            GROUP BY 1, 2, 3
             ORDER BY {order_by}
             LIMIT 10
         """
@@ -191,16 +179,18 @@ def render_cwe_tab(filtro_sql):
         df_cwe_analise = get_data(q_cwe_completa)
 
         if not df_cwe_analise.empty:
+            is_epss_view = "EPSS" in opcao_analise
             fig_cwe_final = px.bar(
                 df_cwe_analise,
                 x='descricao_fraqueza',
                 y=y_axis,
-                text_auto='.2f' if "EPSS" in opcao_analise else True,
+                text_auto=False if is_epss_view else True,
                 labels={
                     'descricao_fraqueza': 'CWE',
                     y_axis: label_y,
                     'identificador_cwe': 'ID CWE'
                 },
+                custom_data=['identificador_cwe', 'descricao_completa'],
                 title=titulo_grafico,
                 color=y_axis,
                 color_continuous_scale='Reds')
@@ -208,6 +198,23 @@ def render_cwe_tab(filtro_sql):
             fig_cwe_final.update_layout(
                 xaxis_tickangle=-45,
             )
-            apply_chart_layout(fig_cwe_final, margin=dict(l=70, r=45, t=75, b=110))
+            if is_epss_view:
+                fig_cwe_final.update_layout(
+                    yaxis_tickformat=".0%",
+                    coloraxis_colorbar=dict(tickformat=".0%")
+                )
+                fig_cwe_final.update_traces(texttemplate="%{y:.0%}", textposition="auto")
+
+            valor_hover = "Média EPSS" if is_epss_view else label_y
+            valor_template = "%{y:.1%}" if is_epss_view else "%{y}"
+            fig_cwe_final.update_traces(
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Nome: %{customdata[1]}<br>"
+                    f"{valor_hover}: {valor_template}<extra></extra>"
+                )
+            )
+            chart_margin = dict(l=95, r=45, t=95, b=110) if is_epss_view else dict(l=70, r=45, t=75, b=110)
+            apply_chart_layout(fig_cwe_final, margin=chart_margin)
 
             st.plotly_chart(fig_cwe_final, width='stretch', key=f"cwe_analise_{opcao_analise}_{filtro_sql}")
