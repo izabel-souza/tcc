@@ -397,7 +397,7 @@ def limpar_busca_cve():
 
 
 def render_cve_lookup_tab(filtro_sql_alias):
-    st.header("Consulta CVE")
+    st.subheader("Consulta CVE")
     st.caption(
         "Consulte vulnerabilidades individuais combinando dados de CVE, CVSS, EPSS, KEV, CWE e MITRE ATT&CK."
     )
