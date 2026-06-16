@@ -210,7 +210,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 y='epss_score',
                 color='categoria_prioridade',
                 symbol='is_kev',
-                hover_data=['id', 'cvss_base_severity'],
+                custom_data=['id', 'cvss_base_severity', 'is_kev'],
                 labels={
                     'cvss_base_score': 'Severidade técnica (CVSS)',
                     'epss_score': 'Probabilidade de exploração (EPSS)',
@@ -241,6 +241,15 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 legend_itemclick="toggleothers",
                 xaxis=dict(dtick=1),
                 yaxis_tickformat=".0%"
+            )
+            fig_scatter.update_traces(
+                hovertemplate=(
+                    "CVSS: %{x}<br>"
+                    "EPSS: %{y:.1%}<br>"
+                    "CVE ID: %{customdata[0]}<br>"
+                    "Severidade: %{customdata[1]}<br>"
+                    "Presente no KEV: %{customdata[2]}<extra></extra>"
+                )
             )
             apply_chart_layout(fig_scatter, margin=dict(l=75, r=55, t=70, b=75))
 
@@ -308,6 +317,12 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 fig_cvss_comp.update_layout(
                     legend_itemclick="toggleothers"
                 )
+                fig_cvss_comp.update_traces(
+                    hovertemplate=(
+                        "Grupo de análise: %{x}<br>"
+                        "Média do score CVSS: %{y}<extra></extra>"
+                    )
+                )
                 apply_chart_layout(fig_cvss_comp)
             
                 st.plotly_chart(fig_cvss_comp, width='stretch', key=f"cvss_perfil_{filtro_sql}")
@@ -330,6 +345,12 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 fig_epss_comp.update_layout(
                     legend_itemclick="toggleothers",
                     yaxis_tickformat=".0%"
+                )
+                fig_epss_comp.update_traces(
+                    hovertemplate=(
+                        "Grupo de análise: %{x}<br>"
+                        "Média EPSS: %{y:.1%}<extra></extra>"
+                    )
                 )
                 apply_chart_layout(fig_epss_comp)
             
@@ -412,6 +433,12 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             fig_cwe_perfil.update_layout(
                 legend_itemclick="toggleothers"
             )
+            fig_cwe_perfil.update_traces(
+                hovertemplate=(
+                    "Tipo de fraqueza (CWE): %{x}<br>"
+                    "Quantidade de CVEs: %{y}<extra></extra>"
+                )
+            )
             apply_chart_layout(fig_cwe_perfil)
 
             st.plotly_chart(fig_cwe_perfil,
@@ -481,6 +508,12 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             }
 
             fig_vol_evolucao.for_each_trace(lambda t: t.update(name=new_names[t.name]))
+            fig_vol_evolucao.for_each_trace(lambda t: t.update(
+                hovertemplate=(
+                    "Ano de publicação: %{x}<br>"
+                    f"{t.name}: %{{y}}<extra></extra>"
+                )
+            ))
 
              # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_vol_evolucao.update_layout(
@@ -527,6 +560,12 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_epss_trend.update_layout(
                 yaxis_tickformat=".0%"
+            )
+            fig_epss_trend.update_traces(
+                hovertemplate=(
+                    "Ano de publicação: %{x}<br>"
+                    "Média EPSS: %{y:.1%}<extra></extra>"
+                )
             )
             apply_chart_layout(fig_epss_trend)
             
