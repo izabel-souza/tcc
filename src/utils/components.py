@@ -1,6 +1,39 @@
 # --- IMPORT ---
 import streamlit as st
 
+def apply_chart_layout(fig, margin=None, height=None):
+    """
+    Aplica espaçamento interno padrão aos gráficos Plotly.
+    """
+    layout_margin = margin or dict(l=70, r=45, t=65, b=70)
+    layout_args = {
+        "margin": layout_margin,
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(0,0,0,0)",
+    }
+
+    if height is not None:
+        layout_args["height"] = height
+
+    fig.update_layout(**layout_args)
+
+    title_text = fig.layout.title.text
+    if title_text:
+        fig.update_layout(
+            title={
+                "text": title_text,
+                "x": 0.02,
+                "xanchor": "left",
+                "y": 0.96,
+                "yanchor": "top",
+                "pad": {"l": 12, "r": 12, "t": 8, "b": 12},
+            }
+        )
+
+    fig.update_xaxes(automargin=True)
+    fig.update_yaxes(automargin=True)
+    return fig
+
 def render_ransomware_icon(percentual):
 
     # Tratamento de erro: se o banco retornar NULL, força o valor para 0.0
@@ -11,26 +44,28 @@ def render_ransomware_icon(percentual):
     fill_color = "#EF4444"
     background_icon = "#374151" # Cinza escuro para a parte não preenchida
     
-    # ... resto do seu código ...
-
-    # Definindo a cor de preenchimento baseada na paleta (CRITICAL #EF4444)
-    fill_color = "#EF4444"
-    background_icon = "#374151" # Cinza escuro para a parte não preenchida
-    
     st.markdown(f"""
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #1F2937; padding: 25px; border-radius: 15px; border: 1px solid #374151;">
-        <div style="position: relative; width: 120px; height: 120px;">
-            <svg viewBox="0 0 24 24" fill="{background_icon}" style="width: 100%; height: 100%; position: absolute;">
-                <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12zm-9-9c-1.66 0-3 1.34-3 3v2H8v6h8v-6h-1v-2c0-1.66-1.34-3-3-3zm1 5h-2v-2c0-.55.45-1 1-1s1 .45 1 1v2z"/>
-            </svg>
-            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: {percentual}%; overflow: hidden; transition: height 1s ease-in-out;">
-                <svg viewBox="0 0 24 24" fill="{fill_color}" style="width: 120px; height: 120px; position: absolute; bottom: 0;">
+    <div style="background-color: #1F2937; padding: 24px 25px 26px; border-radius: 15px; border: 1px solid #374151;">
+        <div style="font-size: 1.65rem; font-weight: 800; color: #F9FAFB; text-align: left;">
+            Risco Associado a Ransomware
+        </div>
+        <div style="max-width: 820px; margin-top: 0.45rem; color: #CBD5E1; font-size: 0.95rem; line-height: 1.45; text-align: left;">
+            Percentual de vulnerabilidades exploradas no catálogo KEV com uso conhecido em campanhas de ransomware.
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 28px;">
+            <div style="position: relative; width: 120px; height: 120px;">
+                <svg viewBox="0 0 24 24" fill="{background_icon}" style="width: 100%; height: 100%; position: absolute;">
                     <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12zm-9-9c-1.66 0-3 1.34-3 3v2H8v6h8v-6h-1v-2c0-1.66-1.34-3-3-3zm1 5h-2v-2c0-.55.45-1 1-1s1 .45 1 1v2z"/>
                 </svg>
+                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: {percentual}%; overflow: hidden; transition: height 1s ease-in-out;">
+                    <svg viewBox="0 0 24 24" fill="{fill_color}" style="width: 120px; height: 120px; position: absolute; bottom: 0;">
+                        <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12zm-9-9c-1.66 0-3 1.34-3 3v2H8v6h8v-6h-1v-2c0-1.66-1.34-3-3-3zm1 5h-2v-2c0-.55.45-1 1-1s1 .45 1 1v2z"/>
+                    </svg>
+                </div>
             </div>
+            <div style="margin-top: 15px; font-size: 28px; font-weight: bold; color: #F9FAFB;">{percentual:.1f}%</div>
+            <div style="color: #D1D5DB; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Vulnerabilidades KEV associadas a ransomware</div>
         </div>
-        <div style="margin-top: 15px; font-size: 28px; font-weight: bold; color: #F9FAFB;">{percentual:.1f}%</div>
-        <div style="color: #9CA3AF; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Presença de Ransomware</div>
     </div>
     """, unsafe_allow_html=True)
 

@@ -2,11 +2,27 @@
 CREATE TABLE cves (
     id VARCHAR(50) PRIMARY KEY,
     published_date TIMESTAMP,
-    last_modified_date TIMESTAMP,                      
+    last_modified_date TIMESTAMP,
+    vuln_status VARCHAR(50),
+    cve_tags TEXT[],
+    description TEXT,
 
     -- metricas CVSS  
-    cvss_base_score DECIMAL(4,1),           
-    cvss_base_severity VARCHAR(20)                    
+    cvss_metric_type VARCHAR(50),
+    cvss_version VARCHAR(20),
+    cvss_vector_string VARCHAR(255),
+    cvss_base_score DECIMAL(4,1),
+    cvss_base_severity VARCHAR(20),
+    cvss_attack_vector VARCHAR(50),
+    cvss_attack_complexity VARCHAR(50),
+    cvss_privileges_required VARCHAR(50),
+    cvss_user_interaction VARCHAR(50),
+    cvss_scope VARCHAR(50),
+    cvss_confidentiality_impact VARCHAR(50),
+    cvss_integrity_impact VARCHAR(50),
+    cvss_availability_impact VARCHAR(50),
+    cvss_exploitability_score DECIMAL(5,2),
+    cvss_impact_score DECIMAL(5,2)
 );
 
 -- KEV

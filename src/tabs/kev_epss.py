@@ -2,10 +2,13 @@
 import streamlit as st
 import plotly.express as px
 from src.utils.database import get_data
-from src.utils.components import render_ransomware_icon
+from src.utils.components import apply_chart_layout, render_ransomware_icon
 
 #FUNCAO COM OS GRAFICOS
 def render_risk_tab(filtro_sql, filtro_estatistico_alias):
+    def add_section_spacing():
+        st.markdown('<div style="height: 1.2rem;"></div>', unsafe_allow_html=True)
+
     st.subheader("Inteligência de Ameaças e Priorização")
     
     # QUERY DO PERCENTUAL DE RANSOMWARE
@@ -23,16 +26,17 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     valor_ransomware = df_ransom_pct['porcentagem'].iloc[0] if not df_ransom_pct.empty else 0
 
     #RENDERIZA ICONE
+    st.markdown('<div style="height: 0.8rem;"></div>', unsafe_allow_html=True)
     render_ransomware_icon(valor_ransomware)
     
-    st.divider()
+    add_section_spacing()
 
     col_k1, col_k2 = st.columns(2)
 
     # RANKING DOS TOP VENDORS (EMPRESAS) COM MAIS VULNERABILIDADES EXPLORADAS COM LOGOS E BARRAS CUSTOMIZADAS
     with col_k1:
         with st.container(border=True):
-            st.subheader("Top Empresas Exploradas")
+            st.subheader("Top 10 Empresas com Exploração Ativa")
             
             vendor_q = f"""
                 SELECT 
@@ -78,7 +82,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     # RANKING DOS TOP PRODUTOS COM MAIS VULNERABILIDADES EXPLORADAS COM LOGOS DE SUA RESPECTIVA EMPRESA E BARRAS CUSTOMIZADAS
     with col_k2:
         with st.container(border=True):
-            st.subheader("Top Produtos Explorados")
+            st.subheader("Top 10 Produtos com Exploração Ativa")
 
             # QUERY
             prod_q = f"""
@@ -121,7 +125,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                     </div>
                     """, unsafe_allow_html=True)
             
-    st.divider()
+    add_section_spacing()
 
     # ==============================================================================
     # CASO DE USO 1: PRIORIZAÇÃO DE CORREÇÃO DE VULNERABILIDADES
@@ -129,49 +133,73 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
     with st.container(border=True): # envolve o gráfico no card
         st.subheader("Priorização de Correção de Vulnerabilidades")
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: O risco real além da teoria.
+                ### Objetivo: priorizar vulnerabilidades pelo risco observado.
                         
-                A análise de ameaças não se limita à gravidade técnica da falha. Vulnerabilidades com notas altíssimas nem sempre são exploradas na prática, enquanto falhas menores podem se tornar alvos frequentes. Este gráfico cruza três dimensões para revelar o risco real:
+                Nem toda vulnerabilidade crítica representa a mesma urgência operacional. Este gráfico cruza a severidade técnica da CVE com a probabilidade de exploração estimada pelo EPSS e a presença no catálogo CISA KEV, ajudando a identificar quais falhas exigem resposta mais rápida.
 
-                * **Eixo X (CVSS):** A severidade técnica da vulnerabilidade.
-                * **Eixo Y (EPSS):** A probabilidade da falha ser explorada nos próximos 30 dias.
-                * **Indicador (KEV):** A confirmação de que a falha já está sendo explorada ativamente no mundo real.
+                * **Eixo X (CVSS):** severidade técnica da vulnerabilidade.
+                * **Eixo Y (EPSS):** probabilidade estimada de exploração.
+                * **Cor:** categoria de prioridade calculada a partir de CVSS, EPSS e KEV.
+                * **Símbolo:** indica se a CVE está presente no catálogo KEV.
 
-                #### Como classificar as ameaças:
-                1. **Prioridade Máxima:** Alta severidade técnica e alta probabilidade de exploração. Exigem correção imediata.
-                2. **Risco Subestimado:** Baixa severidade técnica, mas com alta taxa de ataques na prática.
-                3. **Atenção:** Alta severidade técnica, mas ainda sem evidências de ataques atuais. Exigem monitoramento de perto.
-                4. **Monitoramento Padrão:** Baixo impacto e baixa probabilidade. Podem seguir o fluxo normal de atualização do sistema.
+                #### Como interpretar:
+                1. **Prioridade máxima:** vulnerabilidades presentes no KEV e com alta severidade ou probabilidade relevante de exploração.
+                2. **Risco subestimado:** vulnerabilidades presentes no KEV, mas que podem não parecer críticas apenas por CVSS ou EPSS.
+                3. **Atenção:** vulnerabilidades fora do KEV, mas com CVSS alto ou EPSS relevante.
+                4. **Monitoramento:** vulnerabilidades fora do KEV com menor severidade e menor probabilidade estimada de exploração.
+
+                #### Leitura prática:
+                Vulnerabilidades classificadas como prioridade máxima devem ser tratadas primeiro, pois combinam evidência de exploração real com severidade ou probabilidade relevante. Já os grupos de atenção e monitoramento ajudam a organizar o restante da fila sem depender apenas do score CVSS.
             """)
 
         #QUERY
         query_prioridade = f"""
-            SELECT 
-                c.id,
-                c.cvss_base_score,
-                c.cvss_base_severity,
-                e.epss_score,
-                CASE 
-                    WHEN k.cve_id IS NOT NULL THEN TRUE 
-                    ELSE FALSE END as is_kev,
-                CASE 
-                    WHEN k.cve_id IS NOT NULL AND 
-                    (c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1) THEN 'Prioridade Máxima'
-                    WHEN k.cve_id IS NOT NULL THEN 'Risco Subestimado'
-                    WHEN c.cvss_base_score >= 7.0 AND e.epss_score < 0.1 THEN 'Atenção (Vigilância)'
-                    ELSE 'Monitoramento'
-                END as categoria_prioridade
-            FROM cves c
-            JOIN epss_scores e ON c.id = e.cve_id
-            LEFT JOIN kev k ON c.id = k.cve_id
-            WHERE {filtro_sql}
+            WITH vulnerabilidades_classificadas AS (
+                SELECT
+                    c.id,
+                    c.cvss_base_score,
+                    c.cvss_base_severity,
+                    e.epss_score,
+                    CASE
+                        WHEN k.cve_id IS NOT NULL THEN TRUE
+                        ELSE FALSE
+                    END as is_kev,
+                    CASE
+                        WHEN k.cve_id IS NOT NULL AND
+                        (c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1) THEN 'Prioridade máxima'
+                        WHEN k.cve_id IS NOT NULL THEN 'Risco subestimado'
+                        WHEN c.cvss_base_score >= 7.0 OR e.epss_score >= 0.1 THEN 'Atenção'
+                        ELSE 'Monitoramento'
+                    END as categoria_prioridade
+                FROM cves c
+                JOIN epss_scores e ON c.id = e.cve_id
+                LEFT JOIN kev k ON c.id = k.cve_id
+                WHERE {filtro_sql}
+            ),
+            amostra_balanceada AS (
+                SELECT
+                    *,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY categoria_prioridade
+                        ORDER BY is_kev DESC, e.epss_score DESC, cvss_base_score DESC
+                    ) as posicao_categoria
+                FROM vulnerabilidades_classificadas e
+            )
+            SELECT
+                id,
+                cvss_base_score,
+                cvss_base_severity,
+                epss_score,
+                is_kev,
+                categoria_prioridade
+            FROM amostra_balanceada
+            WHERE posicao_categoria <= 1250
             ORDER BY 
                 is_kev DESC, 
-                e.epss_score DESC, 
-                c.cvss_base_score DESC
-            LIMIT 5000
+                epss_score DESC, 
+                cvss_base_score DESC
         """
         df_prioridade = get_data(query_prioridade)
 
@@ -182,71 +210,79 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 y='epss_score',
                 color='categoria_prioridade',
                 symbol='is_kev',
-                hover_data=['id', 'cvss_base_severity'],
+                custom_data=['id', 'cvss_base_severity', 'is_kev'],
                 labels={
-                    'cvss_base_score': 'Severidade Técnica (CVSS)',
-                    'epss_score': 'Probabilidade de Exploração - EPSS (0-1)',
-                    'categoria_prioridade': 'Classificação de Risco',
+                    'cvss_base_score': 'Severidade técnica (CVSS)',
+                    'epss_score': 'Probabilidade de exploração (EPSS)',
+                    'categoria_prioridade': 'Classificação de risco',
                     'is_kev': 'No KEV'
                 },
                 color_discrete_map={
-                    'Prioridade Máxima': 'darkred',
-                    'Risco Subestimado': 'orange',
-                    'Atenção (Vigilância)': 'yellow',
+                    'Prioridade máxima': 'darkred',
+                    'Risco subestimado': 'orange',
+                    'Atenção': 'yellow',
                     'Monitoramento': 'gray'
                 },
-                title="Correlação CVSS x EPSS (KEV)")
+                title="Relação entre CVSS, EPSS e KEV")
 
             # linhas de quadrante para facilitar a leitura
             fig_scatter.add_hline(
                 y=0.5,
                 line_dash="dot",
                 line_color="red",
-                annotation_text="Alta Probabilidade (EPSS > 0.5)")
+                annotation_text="Alta probabilidade (EPSS > 50%)")
             fig_scatter.add_vline(x=7.0,
                                 line_dash="dot",
                                 line_color="orange",
-                                annotation_text="Alta Severidade (CVSS > 7.0)")
+                                annotation_text="Alta severidade (CVSS > 7.0)")
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_scatter.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
-                legend_itemclick="toggleothers"
+                legend_itemclick="toggleothers",
+                xaxis=dict(dtick=1),
+                yaxis_tickformat=".0%"
             )
+            fig_scatter.update_traces(
+                hovertemplate=(
+                    "CVSS: %{x}<br>"
+                    "EPSS: %{y:.1%}<br>"
+                    "CVE ID: %{customdata[0]}<br>"
+                    "Severidade: %{customdata[1]}<br>"
+                    "Presente no KEV: %{customdata[2]}<extra></extra>"
+                )
+            )
+            apply_chart_layout(fig_scatter, margin=dict(l=75, r=55, t=70, b=75))
 
             st.plotly_chart(fig_scatter, width='stretch', key=f"scatter_prioridade_{filtro_sql}")
 
-    st.divider()
+    add_section_spacing()
 
     # ==============================================================================
     # CASO DE USO 4: PERFIL DAS VULNERABILIDADES EXPLORADAS EM CAMPANHAS REAIS (KEV VS. GERAL)
     # ==============================================================================
-    with st.container(border=True): # envolve o gráfico no card
-
+    with st.container(border=True):
         st.subheader("Perfil das Vulnerabilidades Exploradas")
-        st.write("Comparativo de Médias: Severidade Técnica vs. Probabilidade Real")
+        st.write("Comparativo de médias: severidade técnica vs. probabilidade real")
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: O perfil das ameaças reais
-                Não basta saber que uma falha existe; é preciso entender o porquê os atacantes a escolhem. Esta análise divide as vulnerabilidades em dois mundos (as exploradas na prática e as teóricas) para revelar o padrão de escolha dos cibercriminosos.
+                ### Objetivo: comparar risco técnico e risco observado.
+                Esta análise compara vulnerabilidades presentes no catálogo KEV com o restante da base para verificar se falhas exploradas ativamente apresentam um perfil diferente.
 
-                #### O que observar nos comparativos:
-                1. **Severidade (CVSS):** Os atacantes só buscam as falhas mais críticas? Muitas vezes, os dados mostram que eles utilizam falhas de nota média que são mais fáceis de explorar ou que servem de "porta de entrada" para ataques maiores.
-                2. **Probabilidade (EPSS):** As falhas que já foram exploradas apresentam médias de EPSS drasticamente maiores. Isso prova visualmente que prever ataques usando probabilidade funciona muito melhor do que olhar apenas para a nota de severidade.
-                3. **Tipos de Erro (CWE):** Certos erros de programação (como injeção de código ou falhas de senha) aparecem com muito mais frequência nas ameaças reais do que no volume geral. É o método "favorito" dos invasores.
+                #### Como interpretar:
+                1. **CVSS médio:** mostra se as vulnerabilidades exploradas tendem a ter maior severidade técnica.
+                2. **EPSS médio:** mostra se as vulnerabilidades exploradas também têm maior probabilidade estimada de exploração.
+                3. **Diferença entre os grupos:** quanto maior a distância entre KEV e base geral, mais forte é o indício de que a exploração real não depende apenas da severidade CVSS.
 
-                #### O que significam as cores:
-                * **Vermelho (No Catálogo KEV):** O cenário real. Ameaças concretas, confirmadas e usadas ativamente em ataques.
-                * **Azul (Restante da Base):** O cenário teórico. O grande volume de vulnerabilidades registradas que, em sua esmagadora maioria, não representam perigo prático iminente.
+                #### Leitura prática:
+                Se o EPSS médio das vulnerabilidades no KEV for muito superior ao restante da base, isso indica que priorizar correções combinando KEV e EPSS é mais eficiente do que ordenar vulnerabilidades apenas pelo CVSS.
             """)
 
         q_perfil_estatistico = f"""
             SELECT 
                 CASE 
-                    WHEN k.cve_id IS NOT NULL THEN 'No Catálogo KEV' 
-                    ELSE 'Fora do Catálogo KEV' 
+                    WHEN k.cve_id IS NOT NULL THEN 'No catálogo KEV' 
+                    ELSE 'Fora do catálogo KEV' 
                 END as status_exploracao,
                 ROUND(AVG(c.cvss_base_score)::numeric, 2) as media_score_cvss,
                 ROUND(AVG(e.epss_score)::numeric, 4) as media_probabilidade_epss
@@ -262,76 +298,90 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
         if not df_perfil.empty:
             col_est1, col_est2 = st.columns(2)
 
-        # GRAFICO DE BARRAS 1 - Diferença de Severidade Média (CVSS)
-        with col_est1:
-            fig_cvss_comp = px.bar(
-                df_perfil,
-                x='status_exploracao',
-                y='media_score_cvss',
-                labels={
-                    'media_score_cvss': 'Média do Score CVSS', 
-                    'status_exploracao': 'Grupo de Análise'
-                },
-                title="Diferença de Severidade Média (CVSS)",
-                color='status_exploracao',
-                color_discrete_sequence=['#1f77b4', '#8b0000']
-            )
+            # GRAFICO DE BARRAS 1 - Diferença de Severidade Média (CVSS)
+            with col_est1:
+                fig_cvss_comp = px.bar(
+                    df_perfil,
+                    x='status_exploracao',
+                    y='media_score_cvss',
+                    labels={
+                        'media_score_cvss': 'Média do score CVSS', 
+                        'status_exploracao': 'Grupo de análise'
+                    },
+                    title="Severidade Média: KEV vs. Base Geral",
+                    color='status_exploracao',
+                    color_discrete_sequence=['#1f77b4', '#8b0000']
+                )
 
-            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
-            fig_cvss_comp.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
-                legend_itemclick="toggleothers"
-            )
-        
-            st.plotly_chart(fig_cvss_comp, width='stretch', key=f"cvss_perfil_{filtro_sql}")
-
-        # GRAFICO DE BARRAS 2 - Diferença de Probabilidade Média (EPSS)
-        with col_est2:
-            fig_epss_comp = px.bar(
-                df_perfil,
-                x='status_exploracao',
-                y='media_probabilidade_epss',
-                labels={
-                    'media_probabilidade_epss': 'Média de Probabilidade EPSS',
-                    'status_exploracao': 'Grupo de Análise'
-                },
-                title="Diferença de Probabilidade Média (EPSS)",
-                color='status_exploracao',
-                color_discrete_sequence=['#1f77b4', '#8b0000'])
+                # AJUSTE DE TRANSPARÊNCIA PARA O CARD
+                fig_cvss_comp.update_layout(
+                    legend_itemclick="toggleothers"
+                )
+                fig_cvss_comp.update_traces(
+                    hovertemplate=(
+                        "Grupo de análise: %{x}<br>"
+                        "Média do score CVSS: %{y}<extra></extra>"
+                    )
+                )
+                apply_chart_layout(fig_cvss_comp)
             
-            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
-            fig_epss_comp.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
-                legend_itemclick="toggleothers"
-            )
-        
-            st.plotly_chart(fig_epss_comp, width='stretch', key=f"epss_perfil_{filtro_sql}")
+                st.plotly_chart(fig_cvss_comp, width='stretch', key=f"cvss_perfil_{filtro_sql}")
 
-        st.divider()
+            # GRAFICO DE BARRAS 2 - Diferença de Probabilidade Média (EPSS)
+            with col_est2:
+                fig_epss_comp = px.bar(
+                    df_perfil,
+                    x='status_exploracao',
+                    y='media_probabilidade_epss',
+                    labels={
+                        'media_probabilidade_epss': 'Média de probabilidade EPSS',
+                        'status_exploracao': 'Grupo de análise'
+                    },
+                    title="Probabilidade Média de Exploração: KEV vs. Base Geral",
+                    color='status_exploracao',
+                    color_discrete_sequence=['#1f77b4', '#8b0000'])
+                
+                # AJUSTE DE TRANSPARÊNCIA PARA O CARD
+                fig_epss_comp.update_layout(
+                    legend_itemclick="toggleothers",
+                    yaxis_tickformat=".0%"
+                )
+                fig_epss_comp.update_traces(
+                    hovertemplate=(
+                        "Grupo de análise: %{x}<br>"
+                        "Média EPSS: %{y:.1%}<extra></extra>"
+                    )
+                )
+                apply_chart_layout(fig_epss_comp)
+            
+                st.plotly_chart(fig_epss_comp, width='stretch', key=f"epss_perfil_{filtro_sql}")
 
+    add_section_spacing()
+
+    with st.container(border=True):
         # Comparação de Tipos de Fraqueza (CWE) - Top 5 de cada grupo
-        st.write("### Comparativo de Fraquezas (CWE): KEV vs. Geral")
-        st.write("Perfil das vulnerabilidades que efetivamente viram problema no mundo real.")
+        st.subheader("Comparativo de Fraquezas (CWE): KEV vs. Geral")
+        st.write("Comparação entre os tipos de fraqueza mais frequentes em vulnerabilidades exploradas e não exploradas.")
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de análise:"):
             st.markdown("""
-            ### Objetivo: 
-            Comparar o perfil das vulnerabilidades que entraram no catálogo KEV contra o restante da base de dados, validando a hipótese de que vulnerabilidades exploradas apresentam padrões distintos de severidade e probabilidade.
+            ### Objetivo: comparar os tipos de fraqueza mais recorrentes.
+            Esta análise compara os CWEs mais frequentes nas vulnerabilidades presentes no catálogo KEV com os CWEs mais frequentes no restante da base.
 
-            *  **Perfil de Fraquezas (CWE):** Compara os tipos de erros de programação. Certas falhas (como Injeção de Código) aparecem com mais frequência no KEV do que na base geral, indicando que são os métodos preferidos para invasões.
+            #### Como interpretar:
+            1. **No catálogo KEV:** representa tipos de fraqueza associados a vulnerabilidades com exploração confirmada pela CISA.
+            2. **Fora do catálogo KEV:** representa os tipos de fraqueza mais comuns na base geral, sem confirmação de exploração ativa.
+            3. **Diferença entre os grupos:** ajuda a identificar se as vulnerabilidades exploradas seguem o mesmo padrão da base geral ou se certos tipos de falha aparecem com mais relevância no KEV.
 
-            #### Interpretação das Cores:
-            - **Vermelho (No Catálogo KEV):** O perfil das ameaças concretas e confirmadas pela CISA.
-            - **Azul (Fora do Catálogo):** O perfil do "ruído de fundo" da segurança (vulnerabilidades teóricas que ainda não foram ou não serão exploradas).
+            #### Leitura prática:
+            Quando determinados CWEs aparecem no KEV, eles podem indicar classes de erro que merecem atenção maior em processos de correção, revisão de código e gestão de risco.
             """)
 
         # QUERY
         q_cwe_perfil = f"""
             (
                 SELECT 
-                    'No Catálogo KEV' as grupo,
+                    'No catálogo KEV' as grupo,
                     cw.id as identificador_fraqueza,
                     COUNT(c.id) as quantidade_vulnerabilidades
                 FROM cves c
@@ -346,7 +396,7 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
             UNION ALL
             (
                 SELECT 
-                    'Fora do Catálogo KEV' as grupo,
+                    'Fora do catálogo KEV' as grupo,
                     cw.id as identificador_fraqueza,
                     COUNT(c.id) as quantidade_vulnerabilidades
                 FROM cves c
@@ -370,65 +420,72 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 color='grupo',
                 barmode='group',
                 labels={
-                    'identificador_fraqueza': 'Tipo de Fraqueza (CWE)',
+                    'identificador_fraqueza': 'Tipo de fraqueza (CWE)',
                     'quantidade_vulnerabilidades': 'Quantidade de CVEs'
                 },
-                title="Top 5 Fraquezas em cada Grupo (KEV vs. Restante da Base)",
+                title="Fraquezas Mais Frequentes: KEV vs. Base Geral",
                 color_discrete_map={
-                    'No Catálogo KEV': '#8b0000',
-                    'Fora do Catálogo KEV': '#1f77b4'
+                    'No catálogo KEV': '#8b0000',
+                    'Fora do catálogo KEV': '#1f77b4'
                 })
             
             # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_cwe_perfil.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            fig_cwe_perfil.update_traces(
+                hovertemplate=(
+                    "Tipo de fraqueza (CWE): %{x}<br>"
+                    "Quantidade de CVEs: %{y}<extra></extra>"
+                )
+            )
+            apply_chart_layout(fig_cwe_perfil)
 
             st.plotly_chart(fig_cwe_perfil,
                             width='stretch',
                             key=f"cwe_perfil_bar_{filtro_estatistico_alias}")
 
-    st.divider()
+    add_section_spacing()
 
     # ==============================================================================
     # CASO DE USO 5: TENDÊNCIA TEMPORAL DA EXPLORAÇÃO (VOLUME VS. RISCO)
     # ==============================================================================
+    q_tendencia_temporal = f"""
+        SELECT 
+            EXTRACT(YEAR FROM c.published_date) as ano_publicacao,
+            COUNT(c.id) as quantidade_total_cves,
+            COUNT(CASE WHEN c.cvss_base_severity = 'CRITICAL' THEN 1 END) as quantidade_criticas,
+            COUNT(k.cve_id) as quantidade_exploradas_kev,
+            ROUND(AVG(e.epss_score)::numeric, 4) as media_probabilidade_epss
+        FROM cves c
+        LEFT JOIN kev k ON c.id = k.cve_id
+        LEFT JOIN epss_scores e ON c.id = e.cve_id
+        WHERE {filtro_estatistico_alias}
+        GROUP BY 1
+        ORDER BY 1
+    """
+
+    df_tendencia = get_data(q_tendencia_temporal)
+
     with st.container(border=True):
-        st.subheader("Tendência Temporal: O volume implica em mais risco?")
+        st.subheader("Volume de Vulnerabilidades e Risco Real")
 
-        st.markdown("""Esta análise investiga se o crescimento anual no registro de vulnerabilidades reflete um aumento real na superfície de exploração ou se representa uma inflação de registros de baixo risco operacional.""")
+        st.markdown("Comparação anual entre volume de CVEs publicadas, vulnerabilidades críticas e presença no catálogo KEV.")
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Volume de falhas vs. Risco real
-                Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
+                ### Objetivo: comparar crescimento de volume e risco observado.
+                Esta análise verifica se o aumento anual no número de CVEs publicadas acompanha, na mesma proporção, o crescimento de vulnerabilidades críticas e de vulnerabilidades com exploração ativa registrada no KEV.
 
-                #### Como interpretar os gráficos:
-                *  **Volume Total vs. KEV:** Observe a diferença entre a linha azul (Total de CVEs) e a linha vermelha (KEV). Se a linha azul sobe rapidamente, mas a vermelha permanece estável, isso sugere que estamos descobrindo mais falhas "irrelevantes" ou teóricas do que novas ameaças práticas.
+                #### Como interpretar:
+                1. **Total de vulnerabilidades registradas:** indica o volume anual de CVEs publicadas.
+                2. **Vulnerabilidades de severidade crítica:** mostra quantas CVEs receberam classificação crítica pelo CVSS.
+                3. **Vulnerabilidades em exploração ativa (KEV):** representa CVEs com exploração confirmada pela CISA.
+                4. **Diferença entre as linhas:** quando o total cresce muito mais que o KEV, isso indica que o aumento de registros não necessariamente representa aumento proporcional de risco explorado.
 
-                #### A conclusão prática:
-                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para as equipes de segurança, isso destrói o mito de que é preciso corrigir tudo. A estratégia moderna não é tentar zerar a fila de vulnerabilidades, mas usar inteligência para atacar cirurgicamente apenas as falhas que os criminosos realmente usam.
+                #### Leitura prática:
+                O gráfico reforça que uma estratégia de correção baseada apenas no volume de CVEs pode gerar sobrecarga. Para priorização, é mais eficiente combinar volume, criticidade e evidência de exploração ativa.
             """)
-
-        # QUERY
-        q_tendencia_temporal = f"""
-            SELECT 
-                EXTRACT(YEAR FROM c.published_date) as ano_publicacao,
-                COUNT(c.id) as quantidade_total_cves,
-                COUNT(CASE WHEN c.cvss_base_severity = 'CRITICAL' THEN 1 END) as quantidade_criticas,
-                COUNT(k.cve_id) as quantidade_exploradas_kev,
-                ROUND(AVG(e.epss_score)::numeric, 4) as media_probabilidade_epss
-            FROM cves c
-            LEFT JOIN kev k ON c.id = k.cve_id
-            LEFT JOIN epss_scores e ON c.id = e.cve_id
-            WHERE {filtro_estatistico_alias}
-            GROUP BY 1
-            ORDER BY 1
-        """
-
-        df_tendencia = get_data(q_tendencia_temporal)
 
         # Grafico 1: Comparativo de Volume (Total vs. Criticas vs. KEV)
         if not df_tendencia.empty:
@@ -437,64 +494,79 @@ def render_risk_tab(filtro_sql, filtro_estatistico_alias):
                 x='ano_publicacao',
                 y=['quantidade_total_cves', 'quantidade_criticas', 'quantidade_exploradas_kev'],
                 labels={
-                    'ano_publicacao': 'Ano de Publicação',
-                    'value': 'Quantidade de Vulnerabilidades',
-                    'variable': 'Métrica de Análise'
+                    'ano_publicacao': 'Ano de publicação',
+                    'value': 'Quantidade de vulnerabilidades',
+                    'variable': 'Métrica de análise'
                 },
-                title="Evolução Temporal: Volume Total vs. Severidade Crítica vs. Exploração Ativa", markers=True)
+                title="Evolução Anual: Volume, Criticidade e Exploração Ativa", markers=True)
 
             # renomeia as legendas no gráfico
             new_names = {
-                'quantidade_total_cves': 'Total de Vulnerabilidades Registradas',
-                'quantidade_criticas': 'Vulnerabilidades de Severidade Crítica',
-                'quantidade_exploradas_kev': 'Vulnerabilidades em Exploração Ativa (KEV)'
+                'quantidade_total_cves': 'Total de vulnerabilidades registradas',
+                'quantidade_criticas': 'Vulnerabilidades de severidade crítica',
+                'quantidade_exploradas_kev': 'Vulnerabilidades em exploração ativa (KEV)'
             }
 
             fig_vol_evolucao.for_each_trace(lambda t: t.update(name=new_names[t.name]))
+            fig_vol_evolucao.for_each_trace(lambda t: t.update(
+                hovertemplate=(
+                    "Ano de publicação: %{x}<br>"
+                    f"{t.name}: %{{y}}<extra></extra>"
+                )
+            ))
 
              # AJUSTE DE TRANSPARÊNCIA PARA O CARD
             fig_vol_evolucao.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-                plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
                 legend_itemclick="toggleothers"
             )
+            apply_chart_layout(fig_vol_evolucao)
 
             st.plotly_chart(fig_vol_evolucao, width='stretch', key=f"trend_vol_{filtro_estatistico_alias}")
 
-        st.divider()
+    add_section_spacing()
 
+    with st.container(border=True):
         # Grafico 2: Evolução da Probabilidade Média (EPSS) ao longo dos anos
-        st.write("### Evolução da Probabilidade Média de Exploração (EPSS)")
+        st.subheader("Tendência da Probabilidade de Exploração")
 
-        with st.expander("Guia de Análise:"):
+        with st.expander("Guia de análise:"):
             st.markdown("""
-                ### Objetivo: Volume de falhas vs. Risco real
-                Este caso de uso investiga a relação entre a quantidade massiva de registros anuais e a periculosidade real observada no histórico de ataques.
+                ### Objetivo: avaliar a tendência do risco probabilístico.
+                Esta análise acompanha a média anual do EPSS das vulnerabilidades publicadas, indicando se a probabilidade estimada de exploração está aumentando ou diminuindo ao longo do tempo.
 
-                #### Como interpretar os gráficos:
-                
-                *  **Média EPSS (Gráfico de Área):** Este indicador mostra a "temperatura" da base. Se a probabilidade média (EPSS) está caindo enquanto o volume sobe, estamos vivendo uma inflação de registros de baixo risco. Se o EPSS sobe, as falhas novas estão vindo mais "armaenizáveis".
+                #### Como interpretar:
+                1. **EPSS médio anual:** representa a probabilidade média de exploração das CVEs publicadas em cada ano.
+                2. **Tendência de queda:** pode indicar aumento no volume de vulnerabilidades com baixa probabilidade estimada de exploração.
+                3. **Tendência de alta:** pode indicar maior concentração de vulnerabilidades com sinais de exploração ou maior interesse ofensivo.
+                4. **Anos recentes:** devem ser interpretados com cautela, pois CVEs novas podem ter menos sinais históricos disponíveis para o cálculo do EPSS.
 
-                #### O que isso prova:
-                Esta visualização sustenta a hipótese de que o **aumento na superfície de detecção não é sinônimo de aumento na superfície de ataque**. Para um gestor de segurança, isso justifica focar recursos na inteligência de ameaças (KEV/EPSS) em vez de tentar "corrigir tudo" apenas pelo volume.
+                #### Leitura prática:
+                Quando o volume de CVEs cresce, mas o EPSS médio cai, a priorização baseada apenas em quantidade tende a gerar ruído. O EPSS ajuda a diferenciar vulnerabilidades com maior probabilidade de exploração daquelas que podem ser acompanhadas com menor urgência.
             """)
 
-        fig_epss_trend = px.area(
-            df_tendencia,
-            x='ano_publicacao',
-            y='media_probabilidade_epss',
-            labels={
-                'ano_publicacao': 'Ano de Publicação',
-                'media_probabilidade_epss': 'Média de Probabilidade (EPSS)'
-            },
-            title="Tendência de Probabilidade Média de Exploração por Ano", 
-            color_discrete_sequence=['red']
-        )
-        
-        # AJUSTE DE TRANSPARÊNCIA PARA O CARD
-        fig_epss_trend.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', # fundo do papel transparente
-            plot_bgcolor='rgba(0,0,0,0)',  # fundo do gráfico transparente
-        )
-        
-        st.plotly_chart(fig_epss_trend, width='stretch', key=f"trend_epss_{filtro_estatistico_alias}")
+        if not df_tendencia.empty:
+            fig_epss_trend = px.area(
+                df_tendencia,
+                x='ano_publicacao',
+                y='media_probabilidade_epss',
+                labels={
+                    'ano_publicacao': 'Ano de publicação',
+                    'media_probabilidade_epss': 'Média de probabilidade (EPSS)'
+                },
+                title="Probabilidade Média de Exploração por Ano", 
+                color_discrete_sequence=['red']
+            )
+            
+            # AJUSTE DE TRANSPARÊNCIA PARA O CARD
+            fig_epss_trend.update_layout(
+                yaxis_tickformat=".0%"
+            )
+            fig_epss_trend.update_traces(
+                hovertemplate=(
+                    "Ano de publicação: %{x}<br>"
+                    "Média EPSS: %{y:.1%}<extra></extra>"
+                )
+            )
+            apply_chart_layout(fig_epss_trend)
+            
+            st.plotly_chart(fig_epss_trend, width='stretch', key=f"trend_epss_{filtro_estatistico_alias}")
