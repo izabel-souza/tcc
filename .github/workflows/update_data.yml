@@ -2,7 +2,7 @@ name: Atualizar base de dados do TCC
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Toda semana (Domingo 00:00)
+    - cron: '0 0 * * *' # Todo dia à meia-noite
   workflow_dispatch: # Permite rodar manualmente para testar
 
 jobs:
