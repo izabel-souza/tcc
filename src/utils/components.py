@@ -64,6 +64,7 @@ def render_ransomware_icon(percentual):
                 </div>
             </div>
             <div style="margin-top: 15px; font-size: 28px; font-weight: bold; color: #F9FAFB;">{percentual:.1f}%</div>
+            <div style="color: #D1D5DB; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Vulnerabilidades KEV associadas a ransomware</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
