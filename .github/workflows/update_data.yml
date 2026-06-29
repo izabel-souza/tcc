@@ -24,4 +24,4 @@ jobs:
           DB_USER: "admin"
           DB_PASS: ${{ secrets.DB_PASS }}
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: python setup.py
+        run: python setup.py|""
