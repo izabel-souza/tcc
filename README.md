@@ -41,7 +41,7 @@ A arquitetura do projeto foi definida visando simplicidade, flexibilidade e poss
 
 
 ## Automação com GitHub Actions
-O projeto conta com uma esteira de CI/CD para dados que mantém a base atualizada semanalmente.
+O projeto conta com uma esteira de CI/CD para dados que mantém a base atualizada diariamente.
 
 Workflow Agendado
 Localizado em ```.github/workflows/update_data.yml```, o fluxo é executado automaticamente todo dia à meia-noite, utilizando um Self-hosted Runner para acessar o banco de dados local com segurança.
